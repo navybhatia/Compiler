@@ -1,0 +1,44 @@
+/*
+ *   variable, class decl 
+ *   
+ *
+ */
+
+
+    event open (string a1 , int a2 , unsigned int a3);
+
+    int i = 2, j=3;
+    
+    class CString;
+    class CStr;
+
+    CString cs1;
+    CString cs2=cs1;
+    
+    CStr cs3=cs2;
+	
+    bool a,c=false;
+   
+    double x=i, d=a;
+
+    byte b=i;
+    string s ;
+    
+    int f=2+i;   
+ 
+    int flags;     
+    
+    unsigned int mode;	
+
+    open(file, flags, mode) -> {
+                     
+                     if ((i < j)) {
+                        i = (23 * (-i)/j);
+                    }
+                    else ;
+		 	
+  
+
+
+    };
+   

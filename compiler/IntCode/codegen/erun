@@ -1,0 +1,5 @@
+#!/bin/bash
+make demo
+f=$1
+shift
+./demo $f && ./${f/%.i/} $*

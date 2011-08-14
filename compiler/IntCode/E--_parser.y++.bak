@@ -1,0 +1,139 @@
+%{
+
+#include "Ast.h"
+#include "ParserUtil.h"
+#include "Error.h"
+
+using namespace std;
+
+extern int verbosity;
+extern int yylex();
+extern void yyerror(const char *s);
+int offSet;
+extern const OpNode::OpInfo opInfo[];
+
+%}
+
+%union{
+  unsigned int 		 uVal;
+  double             dVal;
+  char*              cVal;
+  vector<string>*    strVector;
+  Value*             valVal;
+
+  ExprNode*          exprVal;
+  vector<ExprNode*>* exprList;
+  RefExprNode*       refexpVal;
+
+  ClassEntry*        classEntry;
+  Type*              typeVal;
+  vector<Type*>*     typeList; 
+
+  EventEntry*        eventEntry;                        
+  VariableEntry*     variableEntry;
+  FunctionEntry*     functionEntry;
+
+  BasePatNode*       patVal;
+  PrimitivePatNode*  primPatVal;
+  StmtNode*          stmtVal;
+  list<StmtNode*>*   stmtList;
+  IfNode*            ifVal;
+  CompoundStmtNode*  compoundStmtVal;
+  RuleNode*          ruleNode;
+
+  vector<RuleNode*>* transList;
+  
+  vector<Type*>*     formalTypeVal;
+  const OpNode::OpInfo*    funIval;
+};
+
+/* Operators */
+
+%token TOK_LEX_ERROR TOK_PAT_STAR TOK_PAT_OR TOK_PAT_NOT
+%token TOK_PLUS TOK_MINUS TOK_UMINUS TOK_MULT TOK_DIV TOK_MOD 
+%token TOK_BITAND TOK_BITOR TOK_BITNOT TOK_BITXOR TOK_SHL TOK_SHR 
+%token TOK_GT TOK_LT TOK_GE TOK_LE TOK_EQ  TOK_NE TOK_AND TOK_OR TOK_NOT 
+%token TOK_COMMA TOK_ASSIGN TOK_SEMICOLON TOK_COLON TOK_ARROW
+%token TOK_LBRACE TOK_RBRACE TOK_LPAREN TOK_RPAREN
+
+/* Key words */
+
+%token TOK_IF TOK_ELSE TOK_CLASS TOK_RETURN TOK_EVENT TOK_ANY TOK_PRINT 
+%token TOK_UINTNUM TOK_DOUBLENUM TOK_VOID TOK_STRING TOK_STRCONST 
+%token TOK_INT TOK_UNSIGNED TOK_BOOL TOK_BYTE TOK_DOUBLE TOK_SHORT
+%token TOK_TRUE TOK_FALSE TOK_IDENT
+
+/******************************** Type Info ********************************/
+
+/*
+ * Note that you don't need to stick to these definitions.
+ * Design your own symbols.
+ */
+
+/*
+%type <functionEntry> function_header function_decl
+%type <variableEntry> variable_decl formal_param variable_decl1
+%type <typeList> formal_param_list formal_param_plus 
+%type <eventEntry> event_decl_hdr event_decl
+%type <patVal> event_pattern rule_body1
+%type <primPatVal> event primitive_pat 
+%type <typeVal> type baseType 
+%type <exprList> expr_list expr_plus
+%type <exprVal> expr function_invocation asg_stmt
+%type <refexpVal> ref_expr
+%type <ruleNode> rule
+%type <strVector> id_list id_plus
+
+%type <cVal> TOK_IDENT TOK_PRINT 
+%type <funIval> ev_or_fun
+%type <uVal> TOK_UINTNUM 
+%type <dVal> TOK_DOUBLENUM 
+%type <cVal> TOK_STRCONST
+
+%type <valVal> literal
+
+%type <stmtList> stmt_plus
+%type <stmtVal> stmt simple_stmt
+%type <compoundStmtVal> compoundStmt fun_rest
+%type <ifVal>  if_then_else_stmt   
+*/
+
+/*********************   Precedence and Associativity    ********************/
+
+%nonassoc TOK_ASSIGN
+
+%left  TOK_PAT_OR 
+%left  TOK_COLON
+%left  TOK_PAT_STAR
+%right TOK_PAT_NOT
+
+%left  TOK_OR
+%left  TOK_AND
+%right TOK_NOT
+
+%nonassoc TOK_EQ TOK_NE TOK_GT TOK_LT TOK_GE TOK_LE
+
+%left  TOK_BITOR TOK_BITXOR
+%left  TOK_BITAND
+%right TOK_BITNOT 
+%left  TOK_SHL TOK_SHR
+
+%right TOK_DOUBLE_COLON
+
+%left  TOK_PLUS TOK_MINUS
+%left  TOK_MULT TOK_DIV TOK_MOD
+%right TOK_UMINUS 
+
+%left  TOK_LBRACK
+%left  TOK_DOT
+
+/**************************************************************************/
+
+%start specification
+%%
+
+
+specification: {}
+  ;
+
+%%

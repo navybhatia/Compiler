@@ -1,0 +1,57 @@
+/* 
+ * Tests: if-then-else
+ */
+
+    event open (string a1 , int a2 , unsigned int a3);
+    string file;
+    int flags;
+    unsigned int mode;   
+ 
+    int logMessage(string x) ;	
+    int i = 2 ;
+    int j = 3 ;
+    int k = 4 ;
+    double f = 3.3;
+
+    string s ;
+    byte bt;
+
+    bool bo ;
+    bool bo1, bo2, bo3 ;
+
+
+    open(file, flags, mode) -> {
+        
+        if(i<=j || j >=f){
+                if ((i < j) || (j > k)) {
+                	;
+		}
+                else {
+                	;
+		}
+		;
+	}
+
+        else{;}
+
+        if(!bo && bo3){
+        	;
+	}
+
+        if(f=i){
+		logMessage("Assignment in condition") ;
+	} 
+
+	 if(i) {
+                logMessage("Bad if - condition is not boolean - but i int") ;
+        }
+
+        if(i + f ==9) {
+                logMessage("float + int in condition") ;
+        }
+
+        if(i / f ) {
+                logMessage("float condition") ;
+        }
+
+} ;

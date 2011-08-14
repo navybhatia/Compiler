@@ -1,0 +1,54 @@
+/*
+ *   variable decl, initialization 
+ *   
+ *
+ */
+
+
+    event a(int a);
+int fib(int n)
+{
+	int c;
+	if(n==1)
+		return 0;
+	if(n==2)
+		return 1;
+	c=fib(n-2)+fib(n-1);
+	return c;
+};
+
+    int n = 5 ;
+	int k;
+a(k) -> {
+fib(n);};
+
+    /*int k = 4.0 ;
+    
+    unsigned int ui=8;
+    unsigned int uj=i;
+    
+    unsigned int uk=-1;
+
+    bool b1=true;
+    bool b2=false;
+
+    double c=0.1;
+    double d=i;
+    double e=b1;
+
+    byte b ;
+    string s="aaaa";
+    string ss=i;	 
+
+
+    string file;
+    int flags;     
+    
+    unsigned int mode;	
+
+    open(file, flags, mode) -> {
+                     
+		;
+
+    };
+  */ 

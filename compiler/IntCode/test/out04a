@@ -1,0 +1,11 @@
+
+  event open(string a1, int a2, unsigned int a3);
+  bool condition
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    if (bool) if (bool) if (bool) ;
+    if (bool) if (bool) ;
+    else if (bool) ;
+    };
+  ;;
+  

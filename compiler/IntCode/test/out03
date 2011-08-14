@@ -1,0 +1,31 @@
+test/in03:37: Error:Assigned expression must be a subtype of target
+
+  event open(string a1, int a2, unsigned int a3);
+  int a
+  int b
+  int c
+  double x
+  double y
+  string s1
+  string s2
+  class CString;
+  class CString cs
+  string file
+  int flags
+  unsigned int mode
+  int g(int a, int b, double x) {
+      int=(int)unsigned int;
+    double=(double)(int+int);
+    return int;
+  }
+  double f(string s1, class CString s2) {
+      double=(double+(double)unsigned int);
+    return (double)int;
+  }
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    int=g(int, int, double);
+    int=f(string, class CString);
+  };
+  ;;
+  

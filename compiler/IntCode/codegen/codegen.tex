@@ -1,0 +1,99 @@
+\documentclass[10pt]{article}
+\usepackage{url}
+\usepackage[colorlinks=true, linkcolor=blue, 
+              citecolor=blue, urlcolor=blue,
+              %ps2pdf,                %%% hyper-references for ps2pdf
+              bookmarks=true,        %%% generate bookmarks ...
+              bookmarksnumbered=true,%%% ... with numbers
+  ]{hyperref}
+\setlength{\topmargin}{0in}
+%\setlength{\textwidth}{10.5in}
+%\setlength{\textheight}{8in}
+\setlength{\textwidth}{7in}
+\setlength{\textheight}{9.5in}
+\setlength{\oddsidemargin}{-0.3in}
+\setlength{\evensidemargin}{-.3in}
+\begin{document}
+%\sf
+%\Large
+\newcommand{\LB}{$[$}
+\newcommand{\RB}{$]\;$}
+\newcommand{\LP}{$($}
+\newcommand{\RP}{$)\;$}
+
+\begin{center}
+{\Large \bf CSE 504  Project}\\[0.1in]
+{\large \bf E-{}- Code generation and Optimization}
+\end{center}
+%\LARGE
+\section{Event Matching}
+%
+Event matching should be implemented using one of the direct DFA construction
+techniques we have discussed --- either the one based on the concept of
+derivatives discussed in class, or the technique described in your textbook.
+Of course, neither of these algorithms handle event parameters. In this
+project, you have one of the following options:
+\begin{itemize}
+\item {\bf Option A:} ignore event arguments, thus handling just regular
+  expressions. In this case, there are unlikely to be any special event-related
+  optimizations, so your optimizations will likely be traditional
+  compiler optimizations such as common-subexpression elimination.
+%
+\item {\bf Option B:} handle event arguments and the conditions on them.
+  In this case, you need a more general algorithm. You can refer to
+  Section 5 of the paper available at
+  \url{http://seclab.cs.sunysb.edu/seclab/pubs/usenix99.pdf}. Note that
+  there are some notational differences: the paper uses ``;'', ``$||$'' and
+``$*$'' in the places of ``\verb+:+'', ``\verb+\/+'' and ``\verb+**+''.
+The paper uses the term ``REE'' to refer to these event patterns,
+and NEFA to the automata constructed for matching these patterns.
+
+Note that when you choose option B, you can think of optimizations that
+are specific to event matching and choose to focus on these optimizations
+instead of (or in addition to) traditional compiler optimizations.
+%
+\end{itemize}
+%
+In either case, events will be input using the IN instruction. You can assume
+that, for the purposes of this project, all event names will have only
+a single character, so it will be easy to input event names using the
+IN instruction that returns just a single byte. (This limits us to a
+maximum of 53 events.) With option A, each IN operation will return the
+next event in the input stream, whereas with option B, you will need to
+be able to read event arguments as well. For this project, we will restrict
+ourselves to integer and floating point event arguments. Since you have the
+declaration of events, which specifies the number and types of event arguments,
+you should be able to use an appropriate number of IN operations to input
+event arguments and convert them into integers or floating point numbers.
+For instance, given the following declaration
+
+\begin{verbatim}
+event a(int x1, float x2)
+\end{verbatim}
+
+the input
+\begin{verbatim}
+aK\0\0\0\0\00AaP\0\0\0\0\0@A
+\end{verbatim}
+will denote a sequence of two events \verb+a(75,11.0),a(80,12.0)+. (Note
+that \verb+\0+ denotes a null character.) Note that the input
+representation reflects how integers and floating point numbers are
+represented internally. For instance, an integer is represented using
+4-bytes, with the first byte representing the least significant byte of
+the integer. A similar observation applies to floating point numbers,
+except that their internal representation is a bit more complex. The above
+event information can be read using the following icode:
+
+\begin{verbatim}
+IN R100 // Read event name
+....    // Decide how many parameters to read, and their types
+INI R101 // Read the integer parameter
+INF F101 // Read the floating point parameter
+\end{verbatim}
+
+Note that \verb+IN+ behaves differently from \verb+INI+ and \verb+INF+ 
+on errors: \verb+IN+ will return a negative value to denote input
+errors or en-of-file. The other two instructions will simply abort the
+program with an error message.
+
+\end{document}

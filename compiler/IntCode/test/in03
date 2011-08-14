@@ -1,0 +1,39 @@
+/*
+ *   return statement 
+ *
+ *
+ */
+
+
+    event open (string a1 , int a2 , unsigned int a3);
+
+    int a,b,c;
+
+    double x,y;
+
+    string s1,s2;    
+
+    class CString;
+
+    CString cs;
+
+    string file ;
+    int flags;
+    unsigned int mode;
+
+    int g(int a, int b, double x){
+	a=2;
+        x=a+b;
+	return b;		
+    };
+
+    double f(string s1, CString s2){
+	x=y+2;
+        return a;
+    };
+
+    open(file, flags, mode) -> {
+ 		a=g(b,c,x);
+		a=f(s2,cs); 
+    };
+   

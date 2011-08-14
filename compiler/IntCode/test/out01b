@@ -1,0 +1,20 @@
+test/in01b:24: Error:Assignment between incompatible types
+
+  event open(string a1, int a2, unsigned int a3);
+  int i = (unsigned int+unsigned int)
+  int j = (int)unsigned int*int
+  bool a
+  bool c = bool
+  byte b
+  double x = (double-(double)int)
+  double k = ((unsigned int)byte/unsigned int)
+  unsigned int ui = unsigned int
+  int d = ((double)unsigned int+double)
+  string s
+  string file
+  int flags
+  unsigned int mode
+
+  (open(string file, int flags, unsigned int mode))-->  {};
+  ;;
+  

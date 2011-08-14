@@ -1,0 +1,35 @@
+/* 
+ * Tests: operators
+ */
+ event a ();
+ event b ();
+ event c ();
+ event d ();
+
+    /*(a()\/b()\/c()\/d())**-> {
+	print("a\\n");	
+        };
+    b()**:b()-> {
+	print("b\\n");	
+        };
+    !c()-> {
+	print("c\\n");	
+        };
+    d()-> {
+	print("d\\n");	
+        };
+    any**:a()-> {		
+	print("any:a\\n");	
+        };
+    any**:a():b()-> {		
+	print("any:a:b\\n");	
+        };*/
+    !c()\/c()-> {
+	print("!c OR c\\n");	
+        };
+    a():b() ->{
+	print("a:b\\n");	
+      }
+    (a()\/b()):c() ->{
+	print("a OR b:c\\n");	
+      }

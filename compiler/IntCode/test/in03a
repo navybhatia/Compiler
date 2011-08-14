@@ -1,0 +1,44 @@
+/*
+ *  return stmt 
+ *
+ *
+ */
+
+
+    event open (string a1 , int a2 , unsigned int a3);
+
+    int a,b,c;
+
+    double x,y;
+
+    string s1,s2;    
+
+    class CString;
+
+    CString cs;
+
+    string file ;
+    int flags;
+    unsigned int mode;
+
+    int g(int a, int b, double x){
+        x=a+b;
+	return x;		
+    };
+
+    void f(string s1, CString s2){
+	x=y+2;
+        return x;
+    };
+
+    double h(unsigned int m, int n){
+	s1="adafdfds";
+	return;
+    };
+ 
+    open(file, flags, mode) -> {
+           g(b,c,y); 
+           f(s2, cs);		         
+  
+    };
+   

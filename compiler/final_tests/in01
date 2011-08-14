@@ -1,0 +1,32 @@
+
+int n=100000;
+int m=1000;
+
+event a();
+
+a()->
+{
+	int a,b,c,d,e,f,g,h;
+	int count=0;
+	while(n>0)
+	{
+		m=10000;
+		//print(n,"\\n");
+		while(m>0)
+		{
+		//print("A : ",m,"\\n");
+		a=b+c;
+		d=(b+c)*(b+c)*(b+c);
+		e=(a+d);
+		f=(a+d)*(b+c);
+		g=(f+e);
+		h=(a+d)+(b+c)+(f+e);
+		//print("B : ",m,"\\n");
+                 m=m-1;
+		//print("C : ",m,"\\n");
+		count=count+1;
+		}
+		n=n-1;
+	}
+	print("\\n",count,"\\n");
+}

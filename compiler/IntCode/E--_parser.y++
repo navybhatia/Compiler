@@ -1,0 +1,957 @@
+%{
+
+#include "Ast.h"
+#include "ParserUtil.h"
+#include "Error.h"
+#include "genIntermediateCode.h"
+
+using namespace std;
+
+extern int verbosity;
+extern int yylex();
+extern void yyerror(const char *s);
+int offSet;
+extern const OpNode::OpInfo opInfo[];
+//#define prt(x) cout<<x<<endl;
+#define prt(x)
+vector<VariableEntry*>* eventArgList;
+list<StmtNode*>*   stmt_List;
+RuleBlockEntry *rbe = NULL;
+%}
+
+%union{
+  unsigned int 		 uVal;
+  bool               bVal;
+  double             dVal;
+  char*              cVal;
+  vector<string>*    strVector;
+  Value*             valVal;
+
+  ExprNode*          exprVal;
+  vector<ExprNode*>* exprList;
+  RefExprNode*       refexpVal;
+
+  ClassEntry*        classEntry;
+  Type*              typeVal;
+  vector<Type*>*     typeList; 
+
+  EventEntry*        eventEntry;                        
+  VariableEntry*     variableEntry;
+  FunctionEntry*     functionEntry;
+  WhileNode*	     whileNode;
+  BreakNode* 	     breakNode;
+  PrintStmtNode*     printNode;
+
+  BasePatNode*       patVal;
+  PrimitivePatNode*  primPatVal;
+  StmtNode*          stmtVal;
+  list<StmtNode*>*   stmtList;
+  IfNode*            ifVal;
+  CompoundStmtNode*  compoundStmtVal;
+  RuleNode*          ruleNode;
+
+  vector<RuleNode*>* transList;
+  
+  vector<Type*>*     formalTypeVal;
+  const OpNode::OpInfo*    funIval;
+};
+
+/* Operators */
+
+%token TOK_LEX_ERROR TOK_PAT_STAR TOK_PAT_OR TOK_PAT_NOT
+%token TOK_PLUS TOK_MINUS TOK_UMINUS TOK_MULT TOK_DIV TOK_MOD 
+%token TOK_BITAND TOK_BITOR TOK_BITNOT TOK_BITXOR TOK_SHL TOK_SHR 
+%token TOK_GT TOK_LT TOK_GE TOK_LE TOK_EQ  TOK_NE TOK_AND TOK_OR TOK_NOT 
+%token TOK_COMMA TOK_ASSIGN TOK_SEMICOLON TOK_COLON TOK_ARROW
+%token TOK_LBRACE TOK_RBRACE TOK_LPAREN TOK_RPAREN
+
+/* Key words */
+
+%token TOK_IF TOK_ELSE TOK_CLASS TOK_RETURN TOK_EVENT TOK_ANY TOK_PRINT 
+%token TOK_UINTNUM TOK_DOUBLENUM TOK_VOID TOK_STRING TOK_STRCONST 
+%token TOK_INT TOK_UNSIGNED TOK_BOOL TOK_BYTE TOK_DOUBLE TOK_SHORT
+%token TOK_TRUE TOK_FALSE TOK_IDENT TOK_WHILE TOK_BREAK
+
+/******************************** Type Info ********************************/
+
+/*
+ * Note that you don't need to stick to these definitions.
+ * Design your own symbols.
+ */
+%type <cVal> TOK_IDENT
+%type <typeList> formal_param_list
+%type <typeVal> type
+%type <compoundStmtVal> function_body
+%type <uVal> TOK_UINTNUM 
+%type <dVal> TOK_DOUBLENUM 
+%type <cVal> TOK_STRCONST
+%type <bVal> TOK_TRUE TOK_FALSE
+
+%type <valVal> constant
+%type <exprVal> expr initializer unary_operation binary_operation identifier assignment_statement function_invocation //sign_operation
+%type <variableEntry> variable variable_decl//formal_param variable_decl1
+%type <stmtVal> statement return_statement conditional_statement if_statement
+%type <stmtList> statement_list
+%type <compoundStmtVal> compound_statement
+%type <ruleNode> rule
+%type <patVal> event_pat
+%type <primPatVal> primitive_pat 
+%type <eventEntry> event event_insert event_rule_insert
+%type <functionEntry> function_insert
+%type <exprList> args_list
+%type <whileNode> while_statement
+%type <breakNode> break_statement
+%type <printNode> print_statement
+/*
+%type <compoundStmtVal> compoundStmt
+%type <functionEntry> function_header function_decl
+%type <variableEntry> variable_decl formal_param variable_decl1
+%type <typeList> formal_param_list formal_param_plus 
+%type <eventEntry> event_decl_hdr event_decl
+%type <patVal> event_pattern rule_body1
+%type <primPatVal> event primitive_pat 
+%type <typeVal> type baseType 
+%type <exprList> expr_list expr_plus
+%type <exprVal> expr function_invocation asg_stmt
+%type <refexpVal> ref_expr
+%type <ruleNode> rule
+%type <strVector> id_list id_plus
+
+%type <cVal> TOK_IDENT TOK_PRINT 
+%type <funIval> ev_or_fun
+%type <uVal> TOK_UINTNUM 
+%type <dVal> TOK_DOUBLENUM 
+%type <cVal> TOK_STRCONST
+
+%type <valVal> literal
+
+%type <stmtList> stmt_plus
+%type <stmtVal> stmt simple_stmt
+%type <compoundStmtVal> compoundStmt fun_rest
+%type <ifVal>  if_then_else_stmt   
+*/
+/*********************   Precedence and Associativity    ********************/
+
+%nonassoc TOK_ASSIGN
+
+%left  TOK_PAT_OR 
+%left  TOK_COLON
+%left  TOK_PAT_STAR
+%right TOK_PAT_NOT
+
+%left  TOK_OR
+%left  TOK_AND
+%right TOK_NOT
+
+%nonassoc TOK_EQ TOK_NE TOK_GT TOK_LT TOK_GE TOK_LE
+
+%left  TOK_BITOR TOK_BITXOR
+%left  TOK_BITAND
+%right TOK_BITNOT 
+%left  TOK_SHL TOK_SHR
+
+%right TOK_DOUBLE_COLON
+
+%left  TOK_PLUS TOK_MINUS
+%left  TOK_MULT TOK_DIV TOK_MOD
+%right TOK_UMINUS 
+
+%left  TOK_LBRACK
+%left  TOK_DOT
+
+/**************************************************************************/
+
+%start specification
+%%
+
+specification: ifc_decl_star rule_star { prt("Spec");}
+             | ifc_decl_star {//errMsg("Must contain at least one rule");prt("Spec");
+};
+
+
+ifc_decl_star: /* empty */ {
+}
+| ifc_decl_star ifc_decl {}
+| ifc_decl_star error TOK_SEMICOLON {
+	errMsg("Syntax error, expecting a declaration");
+}
+;
+
+ifc_decl: TOK_SEMICOLON/* empty */
+             | TOK_CLASS TOK_IDENT TOK_SEMICOLON{
+                      ClassEntry *ce = new ClassEntry(string($2), yylinenum, yycolumnno, string(yyfilename));
+                      SymTabEntry* ste = stm.currentScope();
+                      ste = stm.lookUpInScope(string($2), ste->kind());
+                      if ((!ste) ) {
+                      ClassEntry *ce = new ClassEntry(string($2), yylinenum, yycolumnno, string(yyfilename));
+               if(stm.insert(ce) == OK) {
+                  prt("class success");
+                  Type *te = new Type(ce, Type::CLASS);
+                  ce->type(te);
+                }
+               else
+                  printf("class failure");
+
+              }
+              else {
+                     char buf[64];
+                     memset(buf, 0, 64);
+                     sprintf(buf,"Redefinition of name %s",$2);
+                     errMsg(buf);
+                }
+            }
+             | TOK_CLASS error TOK_SEMICOLON {errMsg("Syntax error in class declaration: expecting class name");}
+             | TOK_EVENT event_decl {prt("EventDecl");}
+             | function
+             | variable {
+              }
+                
+;
+
+variable: variable_decl TOK_SEMICOLON
+         { $$ = $1;}
+;
+
+variable_decl: type TOK_IDENT  {prt("VariableDecl");
+           if($1) {
+                      SymTabEntry* ste = stm.currentScope();
+                      ste = stm.lookUpInScope(string($2), ste->kind());
+                      if ((!ste) ) {
+				if(stm.currentScope()->kind()==SymTabEntry::GLOBAL_KIND)
+                          $$= new VariableEntry(string($2), VariableEntry::GLOBAL_VAR, $1, NULL, yylinenum, yycolumnno, string(yyfilename));
+			else
+                          $$= new VariableEntry(string($2), VariableEntry::LOCAL_VAR, $1, NULL, yylinenum, yycolumnno, string(yyfilename));
+                          if(!stmt_List) {
+                              if(stm.insert($$) == OK) {
+                                  prt("Variable success");
+                               }
+                              }
+                          else {
+                              RefExprNode *re = new RefExprNode($$->name(), $$);
+                              ExprStmtNode *esn = new ExprStmtNode(re, yylinenum, yycolumnno, string(yyfilename));
+                              stmt_List->push_back(esn);
+                              if(stm.insert($$) == OK) {
+                                  prt("Variable success");
+                               }
+                              }
+                       }
+                       else {
+                        char buf[64];
+                        memset(buf, 0, 64);
+                        sprintf(buf,"Redefinition of name %s",$2);
+                        errMsg(buf);
+                        $$ = NULL;
+                       }
+                    }
+                else {
+                     $$ = NULL;
+                  }
+                }
+             | variable_decl TOK_COMMA TOK_IDENT  {prt("VariableDecl");
+           if($1) {
+                      SymTabEntry* ste = stm.currentScope();
+                      ste = stm.lookUpInScope(string($3), ste->kind());
+                      if ((!ste) ) {
+				if(stm.currentScope()->kind()==SymTabEntry::GLOBAL_KIND)
+                             $$= new VariableEntry(string($3), VariableEntry::GLOBAL_VAR, $1->type(), NULL, yylinenum, yycolumnno, string(yyfilename));
+				else
+                             $$= new VariableEntry(string($3), VariableEntry::LOCAL_VAR, $1->type(), NULL, yylinenum, yycolumnno, string(yyfilename));
+                                 if(!stmt_List) {
+                                     if(stm.insert($$) == OK) {
+                                        prt("Variable success");
+                                      }
+                                  }
+                                 else {
+                                     RefExprNode *re = new RefExprNode($$->name(), $$);
+                                     ExprStmtNode *esn = new ExprStmtNode(re, yylinenum, yycolumnno, string(yyfilename));
+                                     stmt_List->push_back(esn);
+                                     if(stm.insert($$) == OK) {
+                                           prt("Variable success");
+                                        }
+                                     }
+                                 }
+                       else {
+                            char buf[64];
+                            memset(buf, 0, 64);
+                            sprintf(buf,"Redefinition of name %s",$3);
+                            errMsg(buf);
+                            $$ = NULL;
+                        }
+                     }
+                else
+                     $$ = NULL;
+                }
+             | type TOK_IDENT TOK_ASSIGN expr  {prt("VariableDeclWithInit");
+           if($1) {
+                      SymTabEntry* ste = stm.currentScope();
+                      ste = stm.lookUpInScope(string($2), ste->kind());
+                      if ((!ste) ) {
+				if(stm.currentScope()->kind()==SymTabEntry::GLOBAL_KIND)
+                             $$= new VariableEntry(string($2), VariableEntry::GLOBAL_VAR, $1, $4, yylinenum, yycolumnno, string(yyfilename));
+				else
+                             $$= new VariableEntry(string($2), VariableEntry::LOCAL_VAR, $1, $4, yylinenum, yycolumnno, string(yyfilename));
+
+                          if(!stmt_List) {
+                              if(stm.insert($$) == OK) {
+                                  prt("Variable success");
+                               }
+                              }
+                          else {
+                              RefExprNode *re = new RefExprNode($$->name(), $$);
+                              OpNode *op = new OpNode(OpNode::ASSIGN, re, $4);
+                              ExprStmtNode *esn = new ExprStmtNode(op, yylinenum, yycolumnno, string(yyfilename));
+                              stmt_List->push_back(esn);
+                              if(stm.insert($$) == OK) {
+                                  prt("Variable success");
+                               }
+                              }
+                               }
+                       else {
+                            char buf[64];
+                            memset(buf, 0, 64);
+                            sprintf(buf,"Redefinition of name %s",$2);
+                            errMsg(buf);
+                            $$ = NULL;
+                         }
+			//variable_decl_init($2,$4);	
+                   }
+                else
+                     $$ = NULL;
+              }
+             | variable_decl TOK_COMMA TOK_IDENT TOK_ASSIGN expr  {prt("VariableDeclWithInit");
+           if($1) {
+                      SymTabEntry* ste = stm.currentScope();
+                      ste = stm.lookUpInScope(string($3), ste->kind());
+                      if ((!ste) ) {
+				if(stm.currentScope()->kind()==SymTabEntry::GLOBAL_KIND)
+                              $$= new VariableEntry(string($3), VariableEntry::GLOBAL_VAR, $1->type(), $5, yylinenum, yycolumnno, string(yyfilename));
+				else
+                              $$= new VariableEntry(string($3), VariableEntry::LOCAL_VAR, $1->type(), $5, yylinenum, yycolumnno, string(yyfilename));
+                                 if(!stmt_List) {
+                                     if(stm.insert($$) == OK) {
+                                        prt("Variable success");
+                                      }
+                                  }
+                                 else {
+                                     RefExprNode *re = new RefExprNode($$->name(), $$);
+                                     OpNode *op = new OpNode(OpNode::ASSIGN, re, $5);
+                                     ExprStmtNode *esn = new ExprStmtNode(op, yylinenum, yycolumnno, string(yyfilename));
+                                     stmt_List->push_back(esn);
+                                     if(stm.insert($$) == OK) {
+                                           prt("Variable success");
+                                        }
+                                     }
+                           }
+                      else {
+                            char buf[64];
+                            memset(buf, 0, 64);
+                            sprintf(buf,"Redefinition of name %s",$3);
+                            errMsg(buf);
+                            $$ = NULL;
+                         }
+               }
+                else
+                     $$ = NULL;
+               }
+             | type error TOK_SEMICOLON {errMsg("Error in variable declaration, may be a missing \",\" or identifier");}
+             | type TOK_COMMA error TOK_SEMICOLON {errMsg("Error in variable declaration, may be a missing type name or identifier");}
+
+function_insert: type TOK_IDENT TOK_LPAREN {
+               SymTabEntry* ste = stm.lookUp(string($2));
+               if((ste) && (ste->kind() == SymTabEntry::FUNCTION_KIND)) {
+                   $$ = NULL;
+                    char buf[64];
+                    memset(buf, 0, 64);
+                    sprintf(buf,"Redefinition of name %s",$2);
+                    errMsg(buf);
+               }
+               else {
+               $$ = new FunctionEntry(string($2), NULL, yylinenum, yycolumnno, string(yyfilename));
+               if(stm.insert($$) == OK) {
+                  if(OK != stm.enterScope($$))
+                        printf("\n Invalid Scope\n");
+                  prt("Function success\n");
+                }
+                Type *te = new Type(NULL, $1);
+                $$->type(te);
+               }
+};
+
+function:  function_insert formal_param_list TOK_RPAREN TOK_SEMICOLON {prt("FunctionDecl");
+              if($1) {
+                  if(!$2->size())
+                  {
+                      delete $2;
+                      $2 = NULL;
+                  }
+                  $1->type()->argTypes($2);
+                  stm.leaveScope();
+                 }
+             }
+             |  function_insert formal_param_list TOK_RPAREN function_body {prt("FunctionDecl");
+              if($1) {
+                  $1->body($4);
+                  if(!$2->size())
+                  {
+                      delete $2;
+                      $2 = NULL;
+                  }
+                  $1->type()->argTypes($2);
+                  stm.leaveScope();
+               }
+             }
+|  type TOK_IDENT TOK_LPAREN error TOK_RPAREN function_body {errMsg("Syntax error in formal parameter declaration");}
+|  type TOK_IDENT TOK_LPAREN error TOK_RPAREN TOK_SEMICOLON {errMsg("Syntax error in formal parameter declaration");}
+|  type error function_body  {errMsg("Expecting a function declaration -- may be a missing function name");}
+|   error function_body  {errMsg("Expecting a function declaration -- may be a missing function name");}
+|  type TOK_IDENT TOK_LPAREN error TOK_SEMICOLON  {errMsg("Error while parsing function formal parameters, missing closing parenthesis");}
+|  type TOK_IDENT TOK_LPAREN error function_body TOK_SEMICOLON  {errMsg("Error while parsing function formal parameters, missing closing parenthesis");}
+;
+
+function_body: TOK_LBRACE statement_list TOK_RBRACE {prt("FunctionBody");
+               $$ = new CompoundStmtNode($2, yylinenum, yycolumnno, string(yyfilename));
+               }
+              /*| TOK_LBRACE TOK_RBRACE {prt("FunctionBody");
+               $$ = new CompoundStmtNode(NULL, yylinenum, yycolumnno, string(yyfilename));
+               }*/
+;
+
+
+/*type: type_specifer {prt("Type");}*/
+              ;
+
+type: TOK_INT { prt("int");$$ = new Type(Type::INT);}
+             | TOK_UNSIGNED TOK_INT { prt("uint");$$ = new Type(Type::UINT);}
+             | TOK_BOOL{ prt("bool");$$ = new Type(Type::BOOL);} 
+             | TOK_STRING{ prt("string");$$ = new Type(Type::STRING);} 
+             | TOK_DOUBLE { prt("double");$$ = new Type(Type::DOUBLE);}
+             | TOK_BYTE{ prt("byte");$$ = new Type(Type::BYTE);} 
+             | TOK_VOID{ prt("void");$$ = new Type(Type::VOID);} 
+             | TOK_UNSIGNED TOK_BOOL { errMsg("Invalid use of keyword \"unsigned\"");$$ = new Type(Type::VOID);}
+             | TOK_UNSIGNED TOK_STRING { errMsg("Invalid use of keyword \"unsigned\"");$$ = new Type(Type::VOID);}
+             | TOK_IDENT { prt("unknown");
+                SymTabEntry* ste = stm.lookUp(string($1));
+                if((ste) && !(ste->type()->isScalar(ste->type()->tag())))
+                    $$ = ste->type();
+                else {
+                    char buf[32];
+                    memset(buf, 0, 32);
+                    $$ = new Type(Type::VOID);
+                    sprintf(buf,"Undeclared type \"%s\"",$1);
+                    errMsg(buf);
+                  }
+                }
+;
+
+
+
+/*formal_param_list: {paramList = new vector<Type*>;}
+             |   {paramList = new vector<Type*>;}
+              formal_param {prt("FormalParamList"); 
+             }
+;
+formal_param: type TOK_IDENT {prt("Fo!!rmalParam");
+               VariableEntry *ve = new VariableEntry(string($2),VariableEntry::PARAM_VAR, $1);
+                stm.insert(ve);
+		paramList->push_back($1);
+               
+               }
+            | formal_param TOK_COMMA type TOK_IDENT {prt("FormalParam");
+               VariableEntry *ve = new VariableEntry(string($4),VariableEntry::PARAM_VAR, $3);
+                stm.insert(ve);
+               paramList->push_back($3);
+               }
+;*/
+
+formal_param_list:{ 
+                $$ = new vector<Type*>;
+                }
+               | formal_param_list type TOK_IDENT {prt("Fo!!rmalParam");
+                //paramList = new vector<Type*>;
+               VariableEntry *ve = new VariableEntry(string($3),VariableEntry::PARAM_VAR, $2);
+                stm.insert(ve);
+		$1->push_back($2);
+                $$ = $1;
+               }
+            | formal_param_list TOK_COMMA type TOK_IDENT {prt("FormalParam");
+               VariableEntry *ve = new VariableEntry(string($4),VariableEntry::PARAM_VAR, $3);
+                stm.insert(ve);
+               $1->push_back($3);
+                $$ = $1;
+               }
+;
+
+event_insert: TOK_IDENT TOK_LPAREN{
+               SymTabEntry* ste = stm.lookUp(string($1));
+               if((ste) && (ste->kind() == SymTabEntry::EVENT_KIND)) {
+                   $$ = NULL;
+                    char buf[64];
+                    memset(buf, 0, 64);
+                    sprintf(buf,"Redefinition of name %s",$1);
+                    errMsg(buf);
+               }
+               else {
+                   $$ = new EventEntry(string($1),yylinenum, yycolumnno, string(yyfilename));
+                    if(stm.insert($$) == OK) {
+                       prt("event success");
+                     }
+                else
+                  prt("event failure");
+                stm.enterScope($$);
+               }
+};
+
+event_decl : event_insert formal_param_list TOK_RPAREN TOK_SEMICOLON {
+              if($1) {
+                  Type *te = new Type($2, Type::EVENT);
+                  $1->type(te);
+                  stm.leaveScope();
+               }
+             }
+           | TOK_IDENT TOK_LPAREN error TOK_RPAREN TOK_SEMICOLON {
+	           errMsg("Error in event declaration, expecting formal parameters");}
+           | error TOK_RPAREN TOK_SEMICOLON {
+	           errMsg("Error in event declaration, missing event name or \"(\"");}
+           | error TOK_LPAREN formal_param_list TOK_RPAREN TOK_SEMICOLON {
+	           errMsg("Expected an event name");} //Navdeep
+           | TOK_IDENT TOK_LPAREN error TOK_SEMICOLON {
+	           errMsg("Error in event declaration, expecting formal parameters and a \")\"");}
+;
+
+statement_list: {
+                   $$ = new list<StmtNode*>;
+                   stmt_List =NULL; 
+                }
+              | statement_list if_statement {
+		      if($2)
+			      $1->push_back($2);
+                   $$ = $1;
+                   stmt_List = NULL;
+               }
+;
+
+if_statement: statement TOK_SEMICOLON {
+                  $$ = $1;
+             }
+            | statement {
+                  $$ = $1;
+             }
+;
+
+statement: TOK_SEMICOLON {$$ = NULL;}
+          |function_invocation {prt("FunctionInvocationStmt");
+              if($1)
+                  $$ = new ExprStmtNode($1,yylinenum, yycolumnno, string(yyfilename));
+              else
+                  $$ = NULL;
+           }
+         | conditional_statement {
+               $$ = $1;
+           }
+         | assignment_statement {prt("AssignStmt");
+              if($1)
+                  $$ = new ExprStmtNode($1,yylinenum, yycolumnno, string(yyfilename));
+              else
+                  $$ = NULL;
+           }
+         | return_statement {
+               $$ = $1;
+           }
+         | compound_statement {prt("CompoundStmt");
+               $$ = $1;
+           }
+         | variable {
+               $$ = NULL;
+              //RefExprNode *re = new RefExprNode($1->name(), $1);
+              //$$ = new ExprStmtNode(re, yylinenum, yycolumnno, string(yyfilename));
+           }
+	 | while_statement { prt("while");$$=$1;}
+	 | break_statement { $$=$1;}
+	 | print_statement {$$=$1;}
+         | error TOK_SEMICOLON {errMsg("Syntax error while parsing a statement"); $$ = NULL;}
+;
+
+print_statement : TOK_PRINT TOK_LPAREN args_list TOK_RPAREN
+{
+	$$=new PrintStmtNode($3,yylinenum,yycolumnno,yyfilename);
+};
+
+while_statement: TOK_WHILE  TOK_LPAREN expr TOK_RPAREN compound_statement 
+{
+ 	$$=new WhileNode($3,$5); 
+};
+
+break_statement: TOK_BREAK TOK_UINTNUM
+{
+	$$=new BreakNode($2);
+};
+
+conditional_statement: TOK_IF expr if_statement {prt("IfThenStmt");
+            $$ = new IfNode($2, $3, NULL, yylinenum, yycolumnno, string(yyfilename));
+        }
+	| TOK_IF expr if_statement TOK_ELSE if_statement {prt("IfThenElseStmt");
+            $$ = new IfNode($2, $3, $5, yylinenum, yycolumnno, string(yyfilename));
+        }
+        | TOK_IF error TOK_RBRACE {errMsg("Syntax error while parsing an If expr");}
+        | TOK_ELSE if_statement {errMsg("Syntax error while parsing a statement");}
+	;
+
+return_statement: TOK_RETURN {
+                         SymTabEntry* ste = stm.currentScope(SymTabEntry::FUNCTION_KIND);
+                         if(ste)
+                             $$ = new ReturnStmtNode(NULL, dynamic_cast<FunctionEntry*>(ste));
+                }
+                | TOK_RETURN expr {
+                         SymTabEntry* ste = stm.currentScope(SymTabEntry::FUNCTION_KIND);
+                         if(ste)
+                             $$ = new ReturnStmtNode($2, dynamic_cast<FunctionEntry*>(ste));
+                         else {
+                             errMsg("Return statement is valid only within a function");
+                             $$ = NULL;
+                         }
+                   }
+                | TOK_RETURN error TOK_SEMICOLON {errMsg("Syntax error in return expression");}
+;
+
+compound_statement: TOK_LBRACE statement_list TOK_RBRACE {//extra_semicolons
+                   $$ = new CompoundStmtNode($2, yylinenum, yycolumnno, string(yyfilename));
+                       //printf("\n stmt = %d\n",$2->size());
+                  }
+                  //|TOK_LBRACE error TOK_RBRACE {errMsg("Syntax error, expecting a statement");}
+;
+
+assignment_statement: identifier TOK_ASSIGN expr {prt("Assignment");
+                         if(($1) && ($3)) 
+                             $$ = new OpNode(OpNode::ASSIGN, $1, $3);
+                         else
+                             $$ = NULL;
+                     }
+                    | identifier TOK_ASSIGN error TOK_SEMICOLON {errMsg("Syntax error in assignment");}
+;
+
+function_invocation: TOK_IDENT TOK_LPAREN TOK_RPAREN {prt("FunctionInvocation");
+                         SymTabEntry* ste = stm.lookUp(string($1));
+                         if((ste) && (ste->kind() == SymTabEntry::FUNCTION_KIND))
+                             $$ = new InvocationNode(ste);
+                         else {
+                             char buf[64];
+                             sprintf(buf, "\"%s\" is not a function or module name",$1);
+                             errMsg(buf);
+                             $$ = NULL;
+                         }
+                     }
+                   | TOK_IDENT TOK_LPAREN args_list TOK_RPAREN {prt("FunctionInvocation");
+                         SymTabEntry* ste = stm.lookUp(string($1));
+                         if((ste) && (ste->kind() == SymTabEntry::FUNCTION_KIND)){
+                             $$ = new InvocationNode(ste,$3);}
+                         else {
+                             char buf[64];
+                             sprintf(buf, "\"%s\" is not a function or module name",$1);
+                             errMsg(buf);
+                             $$ = NULL;
+                         }
+                         //$$ = new InvocationNode(ste,argList);
+                     }
+;
+
+expr: initializer {
+        $$ = $1;
+      }
+    | assignment_statement //{prt("AssignStmt");}
+      { $$ = $1;
+      }
+    | function_invocation //{prt("FunctionInvocationStmt");}
+      { $$ = $1;
+      }
+    //| function_invocation_stmt
+    | unary_operation {
+        $$ = $1;
+      }
+    | binary_operation {
+        $$ = $1;
+      }
+    /*| sign_operation {
+        $$ = $1;
+      }*/
+    ;
+
+unary_operation: TOK_NOT expr {prt("!Expr"); $$ = new OpNode(OpNode::NOT, $2);}
+               | TOK_MINUS expr {prt("--Expr"); $$ = new OpNode(OpNode::UMINUS, $2);}
+               | TOK_BITNOT expr {prt("~Expr"); $$ = new OpNode(OpNode::BITNOT, $2);}
+              | TOK_PLUS expr {prt("+Expr"); $$ = new OpNode(OpNode::PLUS, $2);}
+;
+
+/*sign_operation: TOK_UMINUS expr {prt("-Expr"); $$ = new OpNode(OpNode::UMINUS, $2);}
+;*/
+
+binary_operation: expr TOK_AND expr {prt("Expr && Expr"); $$ = new OpNode(OpNode::AND, $1, $3);}
+                | expr TOK_OR expr 	{prt("Expr || Expr"); $$ = new OpNode(OpNode::OR, $1, $3);}
+                | expr TOK_PLUS expr 	{prt("Expr + Expr"); $$ = new OpNode(OpNode::PLUS, $1, $3);}
+                | expr TOK_MINUS expr	{prt("Expr - Expr"); $$ = new OpNode(OpNode::MINUS, $1, $3);}
+                | expr TOK_MULT expr 	{prt("Expr * Expr"); $$ = new OpNode(OpNode::MULT, $1, $3);}
+                | expr TOK_DIV expr 	{prt("Expr / Expr"); $$ = new OpNode(OpNode::DIV, $1, $3);}
+                | expr TOK_MOD expr 	{prt("Expr % Expr"); $$ = new OpNode(OpNode::MOD, $1, $3);}
+                | expr TOK_SHL expr 	{prt("Expr << Expr"); $$ = new OpNode(OpNode::SHL, $1, $3);}
+                | expr TOK_SHR expr 	{prt("Expr >> Expr"); $$ = new OpNode(OpNode::SHR, $1, $3);}
+                | expr TOK_GT expr 	{prt("Expr > Expr"); $$ = new OpNode(OpNode::GT, $1, $3);}
+                | expr TOK_LT expr 	{prt("Expr < Expr"); $$ = new OpNode(OpNode::LT, $1, $3);}
+                | expr TOK_GE expr 	{prt("Expr >= Expr"); $$ = new OpNode(OpNode::GE, $1, $3);}
+                | expr TOK_LE expr 	{prt("Expr <= Expr"); $$ = new OpNode(OpNode::LE, $1, $3);}
+                | expr TOK_EQ expr 	{prt("Expr == Expr"); $$ = new OpNode(OpNode::EQ, $1, $3);}
+                | expr TOK_NE expr 	{prt("Expr != Expr"); $$ = new OpNode(OpNode::NE, $1, $3);}
+                | expr TOK_BITAND expr {prt("Expr & Expr"); $$ = new OpNode(OpNode::BITAND, $1, $3);}
+                | expr TOK_BITOR expr {prt("Expr | Expr"); $$ = new OpNode(OpNode::BITOR, $1, $3);}
+                | expr TOK_BITXOR expr {prt("Expr ^ Expr"); $$ = new OpNode(OpNode::BITXOR, $1, $3);}
+                 //binary_operation binary_operator expr
+;
+
+initializer: identifier {
+              $$ = $1;
+            }
+           | constant {prt("Literal");
+              $$ = new ValueNode($1, yylinenum, yycolumnno, string(yyfilename));
+            }
+           | TOK_LPAREN expr TOK_RPAREN {prt("(Expr)");
+              $$ = $2;
+            }
+           /*| sign_operator identifier
+           | sign_operator constant {prt("Literal");}
+          */ ;
+
+identifier: TOK_IDENT { prt("RefExpr");
+              SymTabEntry* ste = stm.lookUp(string($1));
+              if(ste)
+                  $$ = new RefExprNode(string($1), ste);
+              else {
+                  char buf[32];
+                  sprintf(buf, "Undeclared identifier \"%s\"",$1);
+                  errMsg(buf);
+                  //$$ = NULL;
+                  Type *t = new Type(Type::ERROR);
+                  VariableEntry* ve = new VariableEntry(string($1),VariableEntry::GLOBAL_VAR, t);
+                  stm.insert(ve);
+                  $$ = new RefExprNode(string($1), ve);
+               }
+            }
+           ;
+
+constant: TOK_UINTNUM { $$ = new Value($1, Type::UINT);}
+        | TOK_DOUBLENUM {$$ = new Value($1);}
+        | TOK_STRCONST {$$ = new Value($1);}
+        | TOK_TRUE {$$ = new Value(true);}
+        | TOK_FALSE {$$ = new Value(false);}
+;
+
+
+args_list: expr { $$ = new vector<ExprNode*>;
+               $$ -> push_back($1);
+               //argList -> push_back($1);
+               //$$ = argList;
+           }
+         | args_list TOK_COMMA expr {
+               $1 -> push_back($3);
+               //argList -> push_back($3);
+               //$$ = argList;
+               $$ = $1;
+           }
+;
+
+rule_star: rule extra_semicolons {
+            GlobalEntry *ge = (GlobalEntry*)(stm.currentScope(SymTabEntry::GLOBAL_KIND));
+            if ((ge != NULL) && ($1)) {
+            ge->addRule($1);
+           }
+          }
+         | rule_star rule extra_semicolons {
+            GlobalEntry *ge = (GlobalEntry*)(stm.currentScope(SymTabEntry::GLOBAL_KIND));
+            if ((ge != NULL) && ($2)) {
+            ge->addRule($2);
+           }
+          }
+         | rule_star error TOK_SEMICOLON {errMsg("Error, expecting a rule");}
+;
+
+extra_semicolons: /*empty*/
+                | extra_semicolons TOK_SEMICOLON
+;
+
+rule: event_pat TOK_ARROW statement {prt("Rule");
+      $$ = NULL;
+      if($1) {
+           stm.leaveScope();
+          //RuleBlockEntry *rbe = new RuleBlockEntry(yylinenum, yycolumnno, string(yyfilename));
+          $$ = new RuleNode(rbe, $1, $3);
+          rbe = NULL;
+         }
+          if(rbe) {
+              rbe = NULL;
+              stm.leaveScope();
+          }
+     }
+    |event_pat error TOK_ARROW statement {errMsg("Syntax error, skipping event pattern");}
+;
+event_rule_insert: TOK_IDENT TOK_LPAREN {
+        SymTabEntry *ste = stm.lookUp(string($1));
+        $$ = NULL;
+        if((ste) && (ste->kind() == SymTabEntry::EVENT_KIND)) {
+            $$ = dynamic_cast<EventEntry*>(stm.lookUp(string($1)));
+            //stm.enterScope(ste);
+            if(!rbe) {
+                rbe = new RuleBlockEntry(yylinenum, yycolumnno, string(yyfilename));
+                if(stm.insert(rbe) == OK) {
+                  prt(" event success");
+                  stm.enterScope(rbe);
+                }
+            }
+        }
+        else {
+                 char buf[64];
+                 memset(buf, 0, 64);
+                 sprintf(buf,"Expected an event name, but got \"%s\"",$1);
+                 errMsg(buf);
+        }
+};
+
+event: event_rule_insert event_args_list TOK_RPAREN {prt("NormalEvent");
+        //$$ = dynamic_cast<EventEntry*>(stm.lookUp(string($1)));
+          $$ = $1;
+          if(($1) && (eventArgList))
+          {
+               if(eventArgList->size() != $1->type()->argTypes()->size()) {
+                 char buf[64];
+                 memset(buf, 0, 64);
+                 sprintf(buf,"%s: mismatch in the number of arguments",$1->name().c_str());
+                 errMsg(buf);
+                 $$ = NULL;
+                }
+          }
+       }
+     | event_rule_insert TOK_RPAREN {prt("NormalEvent");
+        //$$ = dynamic_cast<EventEntry*>(stm.lookUp(string($1)));
+          $$ = $1;
+        eventArgList = NULL;
+       }
+     | TOK_ANY {prt("anyEvent");
+              $$ = new EventEntry(string("any"),yylinenum, yycolumnno, string(yyfilename));
+               if(stm.insert($$) == OK) {
+                  prt("any event success");
+                  //stm.enterScope($$);
+                  //Navdeep added to keep track of variables in any
+                  if(!rbe) {
+                      rbe = new RuleBlockEntry(yylinenum, yycolumnno, string(yyfilename));
+                      if(stm.insert(rbe) == OK) {
+                        prt(" event success");
+                        stm.enterScope(rbe);
+                      }
+                  }
+                }
+                else
+                  prt("any event failure");
+        //$$ = stm.lookUp(string($1)); //insert in case of any
+       }
+;
+
+event_pat: primitive_pat {//{prt("Event Pat");
+            $$ = $1;
+           }
+         | event_pat TOK_COLON event_pat {prt("EventPat : EventPat");
+            $$ = NULL;
+            if(($1) && ($3))
+                $$ = new PatNode(PatNode::SEQ, $1, $3, yylinenum, yycolumnno, string(yyfilename));
+           }
+         | event_pat TOK_PAT_OR event_pat {prt("EventPat \\/ EventPat");
+            $$ = NULL;
+            if(($1) && ($3))
+                $$ = new PatNode(PatNode::OR, $1, $3, yylinenum, yycolumnno, string(yyfilename));
+           }
+         | TOK_NOT event_pat {prt("!EventPat");
+            $$ = NULL;
+            if(($2))
+                $$ = new PatNode(PatNode::NEG, $2, NULL, yylinenum, yycolumnno, string(yyfilename));
+           }
+         | event_pat TOK_PAT_STAR  {prt("EventPat **");
+            $$ = NULL;
+            if(($1))
+                $$ = new PatNode(PatNode::STAR, $1, NULL, yylinenum, yycolumnno, string(yyfilename));
+           }
+         | TOK_LPAREN event_pat TOK_RPAREN {prt("(EventPat)");
+            $$ = $2;
+           }
+;
+
+primitive_pat: event {prt("PrimitivePat");
+               $$ = NULL;
+               if($1)
+               {
+                   $$ = new PrimitivePatNode($1,eventArgList);
+               }
+             }
+              
+             | event TOK_BITOR expr {prt("PrimitivePatWithCond");
+               $$ = NULL;
+               if($1)
+               {
+                   $$ = new PrimitivePatNode($1,eventArgList, $3);
+               }
+             }
+             ;
+
+event_args_list
+         : TOK_IDENT {prt("EventFormalParam");
+               SymTabEntry* ste = stm.currentScope();
+               SymTabEntry* ste_arg = NULL;
+
+               ste = stm.lookUpInScope(string($1), SymTabEntry::RULE_BLOCK_KIND);
+               eventArgList = new vector<VariableEntry*>;
+               ste_arg = stm.lookUp(string($1));
+               if(ste_arg) {
+                   VariableEntry* ve = new VariableEntry(string($1),VariableEntry::PARAM_VAR, ste_arg->type());
+                   eventArgList->push_back(ve);
+                   if(!ste) {
+                       if(rbe)
+                           stm.insert(ve);
+                   }
+                   else {
+                         char buf[64];
+                         memset(buf, 0, 64);
+                         sprintf(buf,"Redefinition of name %s",$1);
+                         errMsg(buf);
+                   }
+               }
+               else {
+                         char buf[64];
+                         memset(buf, 0, 64);
+                         sprintf(buf,"Unknown parameter %s",$1);
+                         errMsg(buf);
+                   }
+           }
+         | event_args_list TOK_COMMA TOK_IDENT {prt("EventFormalParam");
+               SymTabEntry* ste = stm.currentScope();
+               SymTabEntry* ste_arg = NULL;
+               //ste = stm.lookUpInScope(string($3), ste->kind());
+               ste = stm.lookUpInScope(string($3), SymTabEntry::RULE_BLOCK_KIND);
+               ste_arg = stm.lookUp(string($3));
+               if(ste_arg) {
+                   VariableEntry* ve = new VariableEntry(string($3),VariableEntry::PARAM_VAR, ste_arg->type());
+                   eventArgList->push_back(ve);
+                   if(!ste) {
+                       if(rbe)
+                           stm.insert(ve);
+                   }
+                   else {
+                         char buf[64];
+                         memset(buf, 0, 64);
+                         sprintf(buf,"Redefinition of name %s",$3);
+                         errMsg(buf);
+                   }
+               }
+               else {
+                         char buf[64];
+                         memset(buf, 0, 64);
+                         sprintf(buf,"Unknown parameter %s",$3);
+                         errMsg(buf);
+                   }
+           }
+         ;
+
+%%

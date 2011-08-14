@@ -1,0 +1,22 @@
+test/in05a:7: Error:Event b requires 2 arguments
+test/in05a:12: Error:Event b requires 2 arguments
+
+  event a(int x);
+  event b(double y, double z);
+  event c;
+  int z
+  int f
+  int g
+  int w
+  int j
+  int y
+
+  ((a(int f)):(b()))-->  int=int;;
+  ((a(int f)):(b(double y, double w)))-->  int=int;;
+  ((a(int f)):(b(double y, double w)|int==double))-->  int=int;;
+  ((a(int g)):(b(double y, double w)|int==double))-->  int=int;;
+  ((a(int h)) \/ (b(double y, double w)|int==double))-->  int=(int)unsigned int;;
+  ((a(int i)) \/ (b(double y)|int==int))-->  int=int;;
+  ((a(int j)) \/ (b(double y, double w)|int==double))-->  int=int;;
+  (a(int k))-->  int=(int+int);;
+  

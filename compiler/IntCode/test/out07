@@ -1,0 +1,63 @@
+test/in07:38: Error:Assignment between incompatible types
+test/in07:46: Error:Invalid use of pattern negation
+test/in07:58: Error:Incompatible type for argument 2 for operator `%'
+test/in07:66: Error:Incompatible type for argument 1 for operator `!'
+test/in07:72: Error:Boolean argument expected
+
+  class CString;
+  string get(class CString c);
+  class ArgV;
+  class pid_t;
+  int getpid_t(class pid_t t);
+  class SchedParamP;
+  class StatP;
+  class NewStatP;
+  int logMessage(string x);
+  int logMessageInt(string x, int y);
+  int getpid();
+  int isChild(class pid_t a);
+  event open(class CString a1, int a2, unsigned int a3);
+  event close(int a1);
+  event lstat(class CString a1, class NewStatP a2);
+  event execve;
+  event fork;
+  event clone;
+  event unlink(class CString a1);
+  event umask(int a1);
+  event write(int a1, class CString a2, int a3);
+  event chmod(class CString a1, unsigned int a2);
+  event truncate(class CString a1, int a2);
+  event sysinfo(int a1);
+  int tmp
+  int i = unsigned int
+  int j = unsigned int
+  int k = double
+  double f = double
+  int y
+  string state_var
+  bool bo
+  bool bo1
+  bool bo2
+  bool bo3
+  bool bo4
+  class ArgV arg
+
+  ((((((open(class CString file, int flags, unsigned int mode))**):(!((any)**))):(open(class CString file1, int flags1, unsigned int mode1)|string=get(class CString))):(!(close(int fd)))):(unlink(class CString path)|string==get(class CString)))-->  {};
+  ;;
+  (((((((((open(class CString file, int flags, unsigned int mode)) \/ (close(int fd))) \/ (unlink(class CString file1))) \/ (chmod(class CString file2, unsigned int mode2))) \/ (truncate(class CString file3, int len)))**):(unlink(class CString file7))):(((write(int b1, class CString b2, int b3)) \/ (umask(int c1))) \/ (sysinfo(int d1)))):(open(class CString file4, int flags4, unsigned int mode4)))-->  {
+    if (((!int<unsigned int&&int<=int)||int>=int)) if ((int<int||int>int)) {
+      double=(((double)((int)unsigned int*-int/int)-double)-(double)(unsigned int%double));
+    };
+    else {
+      int=(int&(int|int))^(int&(int)~(unsigned int)int);
+    };
+    ;
+    else int=(int<<(int>>int));
+    if (!int) if ((int+int)) {
+      double=(((double)((int)unsigned int*-int/int)-double)-(double)((int)unsigned int%int));
+      bool=(bool<bool||bool>bool);
+    };
+    ;
+    };
+  ;;
+  

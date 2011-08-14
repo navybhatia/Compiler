@@ -1,0 +1,35 @@
+/*
+ *   function decl 
+ *
+ *
+ */
+
+
+    event open (string a1 , int a2 , unsigned int a3);
+
+    int b,c;
+   
+    bool d=false;
+  
+    unsigned int y; 
+    string s2;
+    
+    class CString;
+    CString cs;
+    
+    string file ;
+    int flags;
+    unsigned int mode;
+
+    int g(int a, int b, double x);
+
+    double f(string s1, int y);
+
+  
+
+    open(file, flags, mode) -> {
+           g(y,0.5); 
+           f(s2);		         
+	   g(b,c,y,d); 		
+    };
+   

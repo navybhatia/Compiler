@@ -1,0 +1,2 @@
+../codegen/erun: line 5: ./IntermediateCode: No such file or directory
+r.o driver.o Ast.o STEClasses.o SymTabMgr.o Value.o Type.o SymTabEntry.o Error.o ParserUtil.o SymTab.o nSTEClasses.o nAst.o RegTable.o genIntermediateCode.o MemManage.o IntermediateCode.o -lfl

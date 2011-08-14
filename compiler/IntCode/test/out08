@@ -1,0 +1,65 @@
+test/in08:51: Error:Return value incompatible with current function's type
+test/in08:57: Error:1 arguments expected for logMessage
+test/in08:58: Error:Type mismatch for argument 1 to getpid_t
+test/in08:59: Error:Type mismatch for argument 2 to ff
+test/in08:59: Error:Type mismatch for argument 3 to ff
+test/in08:60: Error:3 arguments expected for ff
+
+  class CString;
+  string get(class CString c);
+  class ArgV;
+  class pid_t;
+  int getpid_t(class pid_t t);
+  class SchedParamP;
+  class StatP;
+  class NewStatP;
+  int logMessage(string x);
+  int logMessageInt(string x, int y);
+  int getpid();
+  int isChild(class pid_t a);
+  event open(class CString a1, int a2, unsigned int a3);
+  event close(int a1);
+  event lstat(class CString a1, class NewStatP a2);
+  event execve;
+  event fork;
+  event clone;
+  event unlink(class CString a1);
+  event umask(int a1);
+  event write(int a1, class CString a2, int a3);
+  event chmod(class CString a1, unsigned int a2);
+  event truncate(class CString a1, int a2);
+  event sysinfo(int a1);
+  int tmp
+  int i = unsigned int
+  int j = unsigned int
+  int k = unsigned int
+  double f = double
+  int y
+  string state_var
+  bool bo
+  bool bo1
+  bool bo2
+  bool bo3
+  bool bo4
+  class ArgV arg
+  class CString ss
+  int ff(double x, int y1, string z) {
+      string=get(class CString);
+    return double;
+  }
+
+  ((((((open(class CString file, int flags, unsigned int mode))**):((!(any))**)):(open(class CString file1, int flags1, unsigned int mode1)|string=get(class CString))):(!(close(int fd)))):(unlink(class CString path)|string==get(class CString)))-->  {
+    logMessage();
+    getpid_t(class ArgV);
+    ff((double)int, double, class CString);
+    ff(double, int);
+  };
+  ;;
+  (((((((((open(class CString file, int flags, unsigned int mode)) \/ (close(int fd))) \/ (unlink(class CString file1))) \/ (chmod(class CString file2, unsigned int mode2))) \/ (truncate(class CString file3, int len)))**):(unlink(class CString file7))):(((write(int b1, class CString b2, int b3)) \/ (umask(int c1))) \/ (sysinfo(int d1)))):(open(class CString file4, int flags4, unsigned int mode4)))-->  {
+    if (((!int<unsigned int&&int<=int)||int>=int)) if ((int<int||int>int)) {};
+    else {};
+    ;
+    else int=(int<<(int>>int));
+    };
+  ;;
+  

@@ -1,0 +1,19 @@
+/*
+ * negation in pattern
+ */
+
+event a(int x);
+event b(int y, int z);
+event c(int a, int b, int c);
+int z;
+int f,g,w,j,y ;
+a(e) -> z=z+1;
+!(a(h) \/ b(y, w)):!c(f,g,w1)** -> z=1;
+a(h) \/ b(y, w):!(c(f,g,w1)**) -> z=1;
+a(i) \/ !(b(y, w):c(f,g,w1)) -> z=w;
+(a(i) \/ b(y,w)) : !c(f,g,w1) -> z=w;
+!a(j) \/ b(y, w)|j==w -> z=j;
+!a(k) -> z=k+y;
+
+a(i):!b(y,w) |j=w ->z=j;
+

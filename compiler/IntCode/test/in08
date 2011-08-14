@@ -1,0 +1,76 @@
+/* 
+ * Test: all
+ */
+
+    class CString;;
+    string get(CString c);
+    class ArgV;
+    class pid_t;
+    int getpid_t(pid_t t);
+    class SchedParamP;
+    class StatP;
+    class NewStatP;
+    int logMessage(string x);
+	
+    
+    int logMessageInt(string x, int y) ;    
+    int getpid();
+    int isChild(pid_t a);
+
+    event open (CString a1 , int a2 , unsigned int a3);
+    event close (int a1);
+    event lstat(CString a1 , NewStatP a2 );
+    event execve();
+    event fork();
+    event clone();
+    event unlink(CString a1);
+    event umask(int a1) ;
+    event write(int a1, CString a2, int a3) ;
+    event chmod(CString a1, unsigned int a2) ;
+    event truncate(CString a1, int a2) ;
+    event sysinfo(int a1) ;
+
+int tmp;
+int i = 2;
+int j = 3;
+int k = 4;
+double f = 3.3;
+int y;
+string state_var;
+
+bool bo, bo1, bo2, bo3, bo4;
+ArgV arg;
+CString ss;
+
+int ff(double x, int y1, string z){
+	z=get(ss);
+	return x;
+}
+
+open(file,flags,mode)**: !any** :
+(open(file1,flags1,mode1)|(state_var = get(file1))) :
+(!(close(fd))): (unlink(path)|(state_var == get(path))) -> {
+        logMessage();
+	getpid_t(arg);
+	ff(y, f, ss);
+	ff(f,y); 
+};
+        
+(open(file, flags, mode)  \/ close(fd) \/ unlink(file1) \/chmod(file2, mode2) \/ truncate(file3, len))**: 
+unlink(file7) : 
+(write(b1, b2, b3) \/ umask(c1) \/ sysinfo(d1)) :
+open(file4,flags4, mode4) -> {
+	if(!(i<6) && i<=j || j >=k)
+                if ((i < j) || (j > k)) {
+                	;
+		}
+                else {
+                	;
+		}
+        else
+                k = k << (j >> i) ;
+
+
+};
+
+        

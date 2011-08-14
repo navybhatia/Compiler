@@ -1,0 +1,25 @@
+test/in02a:31: Error:3 arguments expected for g
+test/in02a:32: Error:2 arguments expected for f
+test/in02a:33: Error:3 arguments expected for g
+
+  event open(string a1, int a2, unsigned int a3);
+  int b
+  int c
+  bool d = bool
+  unsigned int y
+  string s2
+  class CString;
+  class CString cs
+  string file
+  int flags
+  unsigned int mode
+  int g(int a, int b, double x);
+  double f(string s1, int y);
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    g(unsigned int, double);
+    f(string);
+    g(int, int, unsigned int, bool);
+  };
+  ;;
+  

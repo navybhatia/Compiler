@@ -1,0 +1,1169 @@
+#include "genIntermediateCode.h"
+//Stack Pointer is R999
+//Return Address Reg is R998
+//Base Pointer is R998
+RegTable Table;
+RegTable *functionTable;
+MemManage *functionMMU;
+MemManage MMU;
+MemManage ruleMMU;
+IntermediateCode Code;
+IntermediateCode functionCode;
+IntermediateCode finalCode;
+Misc misc;
+vector <string> activeRegisters;
+list<string> whileLabels;
+int inFunction;
+int activeRegFill;
+
+list<RulePattern*> pattern;
+RulePattern *global_pat = NULL;
+
+//Overloaded Functions to build instructions
+void buildinstr(string instruction, string arg1)
+{
+	if(inFunction)
+		functionCode.buildinstr(instruction,arg1);
+	else
+		Code.buildinstr(instruction,arg1);
+	/*vector <string> args;
+	args.push_back(arg1);
+	Quadruple *quad=new Quadruple(instruction,args,"");
+	Code.addCode(quad,type);*/
+}
+
+void buildinstr(string instruction, string arg1, string arg2)
+{
+	if(inFunction)
+		functionCode.buildinstr(instruction,arg1,arg2);
+	else
+		Code.buildinstr(instruction,arg1,arg2);
+/*	vector <string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	Quadruple *quad=new Quadruple(instruction,args,"");
+	Code.addCode(quad);*/
+}
+void buildinstr(string instruction, string arg1, string arg2, string arg3)
+{
+	if(inFunction)
+		functionCode.buildinstr(instruction,arg1,arg2,arg3);
+	else
+		Code.buildinstr(instruction,arg1,arg2,arg3);
+	/*vector <string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	Quadruple *quad=new Quadruple(instruction,args,"");
+	Code.addCode(quad);*/
+}
+
+void buildinstr(string instruction, string arg1, string arg2, string arg3,string arg4)
+{
+	if(inFunction)
+		functionCode.buildinstr(instruction,arg1,arg2,arg3,arg4);
+	else
+		Code.buildinstr(instruction,arg1,arg2,arg3,arg4);
+}
+/*
+void buildinstrlb(string instruction, string arg1,string label)
+{
+	vector <string> args;
+	args.push_back(arg1);
+	Quadruple *quad=new Quadruple(instruction,args,label);
+	Code.addCode(quad);
+}
+
+void buildinstrlb(string instruction, string arg1,string arg2, string label)
+{
+	vector <string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	Quadruple *quad=new Quadruple(instruction,args,label);
+	Code.addCode(quad);
+}
+
+void buildinstrlb(string instruction, string arg1,string arg2, string arg3, string label)
+{
+	vector <string> args;
+	args.push_back(arg1);
+	args.push_back(arg2);
+	args.push_back(arg3);
+	Quadruple *quad=new Quadruple(instruction,args,label);
+	Code.addCode(quad);
+}
+*/
+void buildinstrlabel(string label)
+{
+	if(inFunction)
+		functionCode.buildinstrlabel(label);
+	else
+		Code.buildinstrlabel(label);
+	/*vector <string> args;
+	Quadruple *quad=new Quadruple("",args,label);
+	Code.addCode(quad);*/
+}
+
+
+string toString(int N)
+{
+	stringstream ss;	
+	string ret;
+	ss<<N;
+	ret = ss.str();
+	return ret;
+}
+string toString(double N)
+{
+	stringstream ss;	
+	string ret;
+	ss<<N;
+	ret = ss.str();
+	return ret;
+}
+
+int toAscii(string S)
+{
+     char c;
+     int i ;
+     sscanf(S.c_str(),"%c",&c);
+     i = (int)c;
+	//i= atoi(S.c_str());
+
+    return i;
+}
+
+int toInt(string S)
+{
+	int N;
+	stringstream ss(S);
+	ss>>N;
+	return N;
+}
+
+string IfNode::generateCode()
+{
+       string iflabel,value;
+       iflabel=misc.getLabel();
+       buildinstrlabel(iflabel);
+
+       ExprNode *node=cond();
+       if(node !=NULL)
+       value = node->generateCode();
+
+       //buildinstr("JMPC","EQ",value,"0",iflabel);
+
+       if(then_!=NULL)
+       {
+               then_->generateCode();
+       }
+
+       if (else_ != NULL)
+       {
+            buildinstr("JMP", iflabel);
+            buildinstrlabel(value);
+       //string elselabel=misc.getLabel();
+       //buildinstrlabel(elselabel);
+       //CompoundStmtNode *elsestmt=body();
+       //if(node!=NULL)
+       else_->generateCode();
+       }
+
+    return "";
+
+}
+
+
+void VariableEntry::generateCode()
+{
+	Type *var_type = type();	
+	if(varKind()==VariableEntry::GLOBAL_VAR)
+	{
+		string Name=name();
+		ExprNode *node=initVal();
+		if(node!=NULL)
+		{
+			//const Value *valnode=node->value();
+			string val=node->generateCode();
+			int address=MMU.getAddress();
+			MapEntry *entry=new MapEntry(address);
+			Table.insert(Name,entry);
+			MMU.incrementAddress();
+
+					
+			if(Type::isInt(var_type->tag()))
+			{
+				string regstr=Table.getFreeIntReg();
+				buildinstr("MOVI",val,regstr);
+				buildinstr("STI",regstr,toString(entry->getEntry()));
+				entry->setReg(toInt(regstr.substr(1,regstr.size()-1)));
+			}
+			if(Type::isFloat(var_type->tag()))		
+			{
+				string regstr=Table.getFreeFloatReg();	
+				buildinstr("MOVF",val,regstr);
+				buildinstr("STF", regstr,toString(entry->getEntry()));
+				entry->setReg(toInt(regstr.substr(1,regstr.size()-1)));
+			}
+			if(Type::isBool(var_type->tag()))		
+			{
+				cout<<"Boolean variables are left"<<endl;				
+			}
+			if(Type::isString(var_type->tag()))		
+			{
+				cout<<"String variables are left"<<endl;			
+			}
+		}
+		else
+		{
+			int address=MMU.getAddress();
+			MapEntry *entry=new MapEntry(address);
+			Table.insert(Name,entry);
+			MMU.incrementAddress();
+		}
+	}
+	else if(varKind()==VariableEntry::LOCAL_VAR)
+	{
+		string Name=name();
+		ExprNode *node=initVal();
+		if(node!=NULL)
+		{
+			//const Value *valnode=node->value();
+			string val=node->generateCode();
+			int address=functionMMU->getAddress();
+			//cout<<address<<endl;
+			MapEntry *entry=new MapEntry(address);
+			functionTable->insert(Name,entry);
+			functionMMU->incrementAddress();
+			
+			if(Type::isInt(var_type->tag()))
+			{
+				string regstr=Table.getFreeIntReg();
+				string regstr1=Table.getFreeIntReg();
+				buildinstr("MOVI",val,regstr);
+				buildinstr("ADD",toString(entry->getEntry()),"R997",regstr1);
+				buildinstr("STI", regstr,regstr1);
+				buildinstr("ADD","R999","1","R999");
+			}
+			if(Type::isFloat(var_type->tag()))		
+			{
+				string regstr=Table.getFreeFloatReg();
+				string regstr1=Table.getFreeFloatReg();
+				buildinstr("MOVF",val,regstr);
+				buildinstr("ADD",toString(entry->getEntry()),"R997",regstr1);
+				buildinstr("STF", regstr,regstr1);
+				buildinstr("ADD","R999","1","R999");				
+			}
+			if(Type::isBool(var_type->tag()))		
+			{
+			cout<<"Boolean variables are left"<<endl;				
+			}
+			if(Type::isString(var_type->tag()))		
+			{
+				cout<<"String variables are left"<<endl;							
+			}
+		}
+		else
+		{
+			int address=functionMMU->getAddress();
+			MapEntry *entry=new MapEntry(address);
+			functionTable->insert(Name,entry);
+			functionMMU->incrementAddress();
+		}
+	}
+	else if(varKind()==VariableEntry::PARAM_VAR)
+	{
+		string Name=name();
+		int address=functionMMU->getAddress();
+		MapEntry *entry=new MapEntry(address);
+		functionTable->insert(Name,entry);
+		functionMMU->incrementAddress();
+
+		if(Type::isInt(var_type->tag()))
+		{
+			string regstr=Table.getFreeIntReg();
+			buildinstr("SUB","R999","1","R999");
+			buildinstr("LDI","R999",regstr);
+			buildinstr("STI",regstr,toString(entry->getEntry()));
+		}
+		if(Type::isFloat(var_type->tag()))		
+		{
+			string regstr=Table.getFreeFloatReg();
+			buildinstr("SUB","R999","1","R999");
+			buildinstr("LDF","R999",regstr);
+			buildinstr("STF",regstr,toString(entry->getEntry()));
+		}
+		if(Type::isBool(var_type->tag()))		
+		{
+			cout<<"Boolean variables are left"<<endl;			
+		}
+		if(Type::isString(var_type->tag()))		
+		{
+			cout<<"String variables are left"<<endl;							
+		}
+	}
+}
+
+string OpNode::generateCode()
+{
+	int ar=arity();
+	const Type* ctype = coercedType();
+	string regstr;
+
+	if(ar==1)
+	{
+		ExprNode *node1=arg(0);
+		string val1=node1->generateCode();
+
+
+		if(Type::isInt(ctype->tag()))
+		{
+			if(opCode()==OpNode::UMINUS)
+			{	regstr=Table.getFreeIntReg();
+				buildinstr("NEG",(val1),regstr);
+			}
+		}
+
+		else if(Type::isFloat(ctype->tag()))
+		{
+			
+			if(opCode()==OpNode::UMINUS)
+			{	regstr=Table.getFreeFloatReg();
+				buildinstr("FNEG",(val1),regstr);
+			}
+		}
+	}
+
+	if(ar==2)
+	{
+		ExprNode *node1=arg(0);
+		ExprNode *node2=arg(1);
+		const Type* node1_type = node1->coercedType();
+		const Type* node2_type = node2->coercedType();	
+
+		if(opCode()==OpNode::ASSIGN)
+		{
+			string val1=node1->generateCode();
+			string val2=node2->generateCode();
+			buildinstr("MOVI",val2,val2);
+			regstr = val1;
+		}
+	
+		if(Type::isBool(ctype->tag()))
+		{  	string label=misc.getLabel();
+
+			regstr=Table.getFreeIntReg();
+			if(Type::isUnsigned(node1_type->tag()))
+			{
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+
+				cout<<"In unsgined"<<endl;
+				if(opCode()==OpNode::GT)
+					buildinstr("UGT",(val1),(val2),regstr);
+				if(opCode()==OpNode::GE)
+					buildinstr("UGE",(val1),(val2),regstr);
+			}
+			else if(Type::isInt(node1_type->tag()) && Type::isInt(node2_type->tag()) )
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+
+				if(opCode()==OpNode::EQ)
+				{	buildinstr("EQ",(val1),(val2),regstr);
+				}
+				if(opCode()==OpNode::GT)
+				{	buildinstr("GT",(val1),(val2),regstr);
+				}
+				if(opCode()==OpNode::LT)
+				{	buildinstr("GT",(val2),(val1),regstr);
+				}
+				if(opCode()==OpNode::GE)
+				{	buildinstr("GE",(val1),(val2),regstr);
+				}
+				if(opCode()==OpNode::LE)
+				{	buildinstr("GE",(val2),(val1),regstr);
+				}
+				if(opCode()==OpNode::NE)
+				{	buildinstr("NE",(val1),(val2),regstr);
+				}
+			
+
+			}
+			else if(Type::isFloat(node1_type->tag()) || Type::isFloat(node2_type->tag()) )
+			{
+				regstr=Table.getFreeFloatReg();
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+	
+				if(opCode()==OpNode::GT)
+					buildinstr("FGT",(val1),(val2),regstr);
+				if(opCode()==OpNode::LT)
+					buildinstr("FGT",(val2),(val1),regstr);
+				if(opCode()==OpNode::GE)
+					buildinstr("FGE",(val1),(val2),regstr);
+				if(opCode()==OpNode::LE)
+					buildinstr("FGE",(val2),(val1),regstr);
+				if(opCode()==OpNode::EQ)
+					buildinstr("FEQ",(val1),(val2),regstr);
+				if(opCode()==OpNode::NE)
+					buildinstr("FNE",(val1),(val2),regstr);
+			}
+			else
+			{
+				if(opCode()==OpNode::AND)
+        	                {
+                            string lbl1 = node1->generateCode();
+        	                    buildinstr("JMP", label);
+                            buildinstrlabel(lbl1);
+                            string lbl2 = node2->generateCode();
+                            buildinstr("JMP", label);
+                            buildinstrlabel(lbl2);
+                            
+				//buildinstr("AND",(val1),(val2),regstr);
+                        }
+			if(opCode()==OpNode::OR)
+                        {
+                            string lbl1 = node1->generateCode();
+                            string lbl2 = node2->generateCode();
+                            buildinstrlabel(lbl2);
+                            buildinstr("JMP", label);
+                            buildinstr("JMP", lbl1);
+                            buildinstrlabel(lbl1);
+                            
+				//buildinstr("AND",(val1),(val2),regstr);
+                        }
+			if(opCode()==OpNode::NOT)
+                        {
+                            string lbl1 = node1->generateCode();
+                            label = lbl1;
+				//buildinstr("AND",(val1),(val2),regstr);
+                        }
+                              regstr = label;
+
+			}
+			
+		}
+		else if(Type::isInt(ctype->tag()))
+		{
+			string val1=node1->generateCode();
+			string val2=node2->generateCode();
+
+			regstr=Table.getFreeIntReg();
+			if(opCode()==OpNode::PLUS)
+			{	buildinstr("ADD",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::MULT)
+			{	buildinstr("MUL",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::DIV)
+			{	buildinstr("DIV",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::MINUS)
+			{	buildinstr("SUB",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::MOD)
+			{	buildinstr("MOD",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::BITAND)
+			{	buildinstr("AND",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::BITOR)
+			{	buildinstr("OR",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::BITXOR)
+			{	buildinstr("XOR",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::SHL)
+			{	
+				cout<<"Not Valid"<<endl;			
+				buildinstr("SHL",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::SHR)
+			{	
+				cout<<"Not Valid"<<endl;
+				buildinstr("SHR",(val1),(val2),regstr);
+			}	
+		}
+
+		else if(Type::isFloat(ctype->tag()))
+		{	cout<<"Is Integral"<<endl;
+			string val1=node1->generateCode();
+			string val2=node2->generateCode();
+
+			regstr=Table.getFreeFloatReg();
+			if(opCode()==OpNode::PLUS)
+				buildinstr("FADD",(val1),(val2),regstr);
+			if(opCode()==OpNode::MULT)
+				buildinstr("FMUL",(val1),(val2),regstr);
+			if(opCode()==OpNode::DIV)
+				buildinstr("FDIV",(val1),(val2),regstr);
+			if(opCode()==OpNode::MINUS)
+				buildinstr("FSUB",(val1),(val2),regstr);
+		
+		}
+		return (regstr);
+	}
+}
+#if 0
+string OpNode::generateCode()
+{
+	int ar=arity();
+	const Type* ctype = coercedType();
+	string regstr;
+	if(ar==1)
+	{
+		ExprNode *node1=arg(0);
+		string val1=node1->generateCode();
+
+
+		if(Type::isInt(ctype->tag()))
+		{
+			if(opCode()==OpNode::UMINUS)
+			{	regstr=Table.getFreeIntReg();
+				buildinstr("NEG",(val1),regstr);
+			}
+		}
+
+		else if(Type::isFloat(ctype->tag()))
+		{
+			
+			if(opCode()==OpNode::UMINUS)
+			{	regstr=Table.getFreeFloatReg();
+				buildinstr("FNEG",(val1),regstr);
+			}
+		}
+	}
+
+	if(ar==2)
+	{
+		ExprNode *node1=arg(0);
+		ExprNode *node2=arg(1);
+	        string label=misc.getLabel();
+
+		
+
+		if(Type::isInt(ctype->tag())|| Type::isBool(ctype->tag()))
+		{
+			regstr=Table.getFreeIntReg();
+			if(opCode()==OpNode::PLUS) {
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("ADD",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::MULT)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("MUL",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::DIV)
+			{
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("DIV",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::MINUS)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("SUB",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::GT)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("JMPC", "GT",(val1),(val2),label);
+				//buildinstr("GT",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::LT)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("JMPC", "GT",(val2),(val1),label);
+				//buildinstr("GT",(val2),(val1),regstr);
+			}
+			if(opCode()==OpNode::GE)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("GE",(val1),(val2),label);
+				//buildinstr("GE",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::LE)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("GE",(val2),(val1),label);
+				//buildinstr("GE",(val2),(val1),regstr);
+			}
+			if(opCode()==OpNode::EQ)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("EQ",(val1),(val2),label);
+				//buildinstr("EQ",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::NE)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("NE",(val1),(val2),label);
+				//buildinstr("NE",(val1),(val2),regstr);
+			}
+
+			if(opCode()==OpNode::BITAND)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("AND",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::BITOR)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("OR",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::BITXOR)
+			{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+				buildinstr("XOR",(val1),(val2),regstr);
+			}
+			if(opCode()==OpNode::AND)
+                        {
+                            string lbl1 = node1->generateCode();
+                            buildinstr("JMP", label);
+                            buildinstrlabel(lbl1);
+                            string lbl2 = node2->generateCode();
+                            buildinstr("JMP", label);
+                            buildinstrlabel(lbl2);
+                            
+				//buildinstr("AND",(val1),(val2),regstr);
+                        }
+			if(opCode()==OpNode::OR)
+                        {
+                            string lbl1 = node1->generateCode();
+                            string lbl2 = node2->generateCode();
+                            buildinstr("JMP", label);
+                            buildinstrlabel(lbl2);
+                            buildinstr("JMP", lbl1);
+                            buildinstrlabel(lbl1);
+                            
+				//buildinstr("AND",(val1),(val2),regstr);
+                        }
+			if(opCode()==OpNode::NOT)
+                        {
+                            string lbl1 = node1->generateCode();
+                            label = lbl1;
+				//buildinstr("AND",(val1),(val2),regstr);
+                        }
+		}
+
+		else if(Type::isUnsigned(ctype->tag()) || Type::isBool(ctype->tag()))
+		{
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+			regstr=Table.getFreeIntReg();
+			if(opCode()==OpNode::GT)
+				buildinstr("UGT",(val1),(val2),regstr);
+			if(opCode()==OpNode::GE)
+				buildinstr("UGE",(val1),(val2),regstr);
+		}
+
+		else if(Type::isFloat(ctype->tag()) || Type::isBool(ctype->tag()))
+		{
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+			regstr=Table.getFreeFloatReg();
+			if(opCode()==OpNode::PLUS)
+				buildinstr("FADD",(val1),(val2),regstr);
+			if(opCode()==OpNode::MULT)
+				buildinstr("FMUL",(val1),(val2),regstr);
+			if(opCode()==OpNode::DIV)
+				buildinstr("FDIV",(val1),(val2),regstr);
+			if(opCode()==OpNode::MINUS)
+				buildinstr("FSUB",(val1),(val2),regstr);
+			if(opCode()==OpNode::GT)
+				buildinstr("FGT",(val1),(val2),regstr);
+			if(opCode()==OpNode::LT)
+				buildinstr("FGT",(val2),(val1),regstr);
+			if(opCode()==OpNode::GE)
+				buildinstr("FGE",(val1),(val2),regstr);
+			if(opCode()==OpNode::LE)
+				buildinstr("FGE",(val2),(val1),regstr);
+			if(opCode()==OpNode::EQ)
+				buildinstr("FEQ",(val1),(val2),regstr);
+			if(opCode()==OpNode::NE)
+				buildinstr("FNE",(val1),(val2),regstr);
+
+		}
+
+		if(opCode()==OpNode::MOD)
+		{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+			buildinstr("MOD",(val1),(val2),regstr);
+                }
+
+		// Added by Vaibhav Shrivastava
+
+		/** ??? **/	if(opCode()==OpNode::SHL)
+		{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+			buildinstr("SHL",(val1),(val2),regstr);
+                }
+		/** ??? **/	if(opCode()==OpNode::SHR)
+		{	
+				string val1=node1->generateCode();
+				string val2=node2->generateCode();
+			buildinstr("SHR",(val1),(val2),regstr);
+                }
+
+		//
+                if(Type::isBool(ctype->tag()))
+		    return (label);
+		return (regstr);
+	}
+}
+#endif
+
+string RefExprNode::generateCode()
+{
+	//const SymTabEntry *ste=symTabEntry();
+	const VariableEntry *ste=(VariableEntry *)symTabEntry();
+	string name=ext();
+	if(ste->varKind()==VariableEntry::GLOBAL_VAR)
+	{
+		const Type* ctype = coercedType();
+		MapEntry *entry=Table.search(name);
+		int address=entry->getEntry();
+		if(entry->isReg())
+		{
+			string id=toString(address);
+			string regstr;
+			int l=id.size();
+			for(int i=0;i<max(0,3-l);i++)
+				id="0"+id;
+			if(Type::isInt(ctype->tag()))
+				regstr="R"+id;
+			if(Type::isFloat(ctype->tag()))
+				regstr="F"+id;
+			return regstr;
+		}
+		else
+		{
+			string reg=Table.getFreeIntReg();
+			entry->setReg(toInt(reg.substr(1,reg.size()-1)));
+			buildinstr("LDI",reg,toString(address));
+			return reg;
+		}
+	}
+	else if(ste->varKind()==VariableEntry::PARAM_VAR)
+	{
+		Type *ctype = type();
+		MapEntry *entry=functionTable->search(name);
+		int address=entry->getEntry();
+		
+//		if(Type::isInt(ctype->tag()))
+//		{
+		string reg1=Table.getFreeIntReg();
+		string regstr=Table.getFreeIntReg();
+		buildinstr("ADD","R997",toString(address),reg1);
+		buildinstr("LDI",reg1,regstr);
+		return regstr;
+//		}
+//		if(Type::isFloat(ctype->tag()))
+//		{
+//		}
+	}
+        else if(ste->varKind()==VariableEntry::LOCAL_VAR)
+	{
+		Type *ctype = type();
+		MapEntry *entry=functionTable->search(name);
+		int address=entry->getEntry();
+		
+//		if(Type::isInt(ctype->tag()))
+//		{
+		string reg1=Table.getFreeIntReg();
+		string regstr=Table.getFreeIntReg();
+		buildinstr("ADD","R997",toString(address),reg1);
+		buildinstr("LDI",reg1,regstr);
+		return regstr;
+//		}
+//		if(Type::isFloat(ctype->tag()))
+//		{
+//		}
+	}
+
+}
+
+string ValueNode::generateCode()
+{
+	Type *ctype = type();	
+	if(Type::isInt(ctype->tag()))
+		return toString(value()->ival());
+	if(Type::isFloat(ctype->tag()))
+		return toString(value()->dval());
+}
+
+string CompoundStmtNode::generateCode()
+{
+	list <StmtNode*> *statements=stmts();
+	list <StmtNode*> :: iterator it;
+	string temp;
+	if(statements!=NULL)
+		for(it=statements->begin();it!=statements->end();it++)
+			if((*it)!=NULL)
+				temp=(*it)->generateCode();
+	return temp;
+}
+void FunctionEntry::generateCode()
+{
+	inFunction=1;
+	string fname=name();
+	activeRegisters.clear();
+	activeRegFill=1;
+	//activeRegisters.push_back("R999");
+	activeRegisters.push_back("R998");
+	activeRegisters.push_back("R997");
+	//activeRegisters.push_back("R996");
+	functionTable=new RegTable(); 
+	functionMMU=new MemManage();
+	string label=misc.getLabel();
+	misc.mapFuncToLabel(fname,label);
+	misc.mapLabelToFunc(label,fname);
+	buildinstrlabel(label);
+
+	SymTab *st = symTab();
+	Type *ty=type();
+	int psize=ty->arity();
+	functionMMU->setAddress(psize);
+	int i=0;
+	buildinstr("MOVI","R999","R997");
+	buildinstr("SUB","R997","1","R997");
+	buildinstr("LDI","R997","R998");
+	for (SymTab::iterator it = st->begin(); (it != st->end()) && i<psize; ++it,i++) 
+	{
+		VariableEntry *ste=(VariableEntry* )(*it);
+		string Name=ste->name();
+		MapEntry *entry=new MapEntry(psize-i-1);
+		functionTable->insert(Name,entry);
+		buildinstr("SUB","R997","1","R997");
+	}
+
+	st->generateCode(psize,st->size());
+	CompoundStmtNode *node=body();
+	string temp;
+	if(node!=NULL)
+		temp=node->generateCode();
+	buildinstr("JMPI","R998");
+	delete functionTable;
+	delete functionMMU;
+	inFunction=0;
+	activeRegFill=0;
+	activeRegisters.clear();
+}
+
+#if 0
+void FunctionEntry::generateCode()
+{
+	inFunction=1;
+	string fname=name();
+	activeRegisters.clear();
+	functionTable=new RegTable(); 
+	functionMMU=new MemManage();
+	string label=misc.getLabel();
+	misc.mapFuncToLabel(fname,label);
+	misc.mapLabelToFunc(label,fname);
+	buildinstrlabel(label);
+
+	SymTab *st = symTab();
+	Type *ty=type();
+	int psize=ty->arity();
+	functionMMU->setAddress(psize);
+	int i=0;
+	buildinstr("MOVI","R999","R997");
+	buildinstr("SUB","R997","1","R997");
+	buildinstr("LDI","R997","R998");
+	for (SymTab::iterator it = st->begin(); (it != st->end()) && i<psize; ++it,i++) 
+	{
+		VariableEntry *ste=(VariableEntry* )(*it);
+		string Name=ste->name();
+		MapEntry *entry=new MapEntry(psize-i-1);
+		functionTable->insert(Name,entry);
+		buildinstr("SUB","R997","1","R997");
+	}
+
+	st->generateCode(psize,st->size());
+	CompoundStmtNode *node=body();
+	string temp;
+	if(node!=NULL)
+		temp=node->generateCode();
+	buildinstr("JMPI","R998");
+	delete functionTable;
+	delete functionMMU;
+	inFunction=0;
+	activeRegisters.clear();
+}
+#endif
+
+string ExprStmtNode::generateCode()
+{
+	return expr_->generateCode();
+}
+string ReturnStmtNode::generateCode()
+{
+	string val=expr_->generateCode();
+	buildinstr("MOVI",val,"R996");
+	buildinstr("JMPI","R998");
+	return "";
+}
+string InvocationNode::generateCode()
+{
+	const SymTabEntry *ste=symTabEntry();
+	string fname=ste->name();
+	string label=misc.lookupLabel(fname);
+	string rlabel=misc.getLabel();
+	vector <ExprNode*> *args=params();
+
+	int size=args->size();
+	string reglabel=Table.getFreeIntReg();
+	if(inFunction)
+	{
+		//activeRegisters.push_back(reglabel);
+		for(int i=0;i<activeRegisters.size();i++)
+		{
+			buildinstr("STI",activeRegisters[i],"R999");
+			buildinstr("ADD","R999","1","R999");
+		}
+	}
+	activeRegFill=0;
+	for(int i=size-1;i>=0;i--)
+	{
+		string reg=(*args)[i]->generateCode();
+		buildinstr("STI",reg,"R999");
+		buildinstr("ADD","R999","1","R999");
+	}
+	activeRegFill=1;
+	buildinstr("MOVL",rlabel,reglabel);
+	buildinstr("STI",reglabel,"R999");
+	buildinstr("ADD","R999","1","R999");
+	buildinstr("JMP",label);
+	buildinstrlabel(rlabel);
+	buildinstr("MOVI","R997","R999");
+	buildinstr("SUB","R999","1","R999");
+	if(inFunction)
+	{
+		for(int i=activeRegisters.size()-1;i>=0;i--)
+		{
+			buildinstr("LDI","R999",activeRegisters[i]);
+			buildinstr("SUB","R999","1","R999");
+		}
+	}
+	return "R996";
+}
+
+#if 0
+string InvocationNode::generateCode()
+{
+	const SymTabEntry *ste=symTabEntry();
+	string fname=ste->name();
+	string label=misc.lookupLabel(fname);
+	string rlabel=misc.getLabel();
+	vector <ExprNode*> *args=params();
+
+	int size=args->size();
+	for(int i=size-1;i>=0;i--)
+	{
+		string reg=(*args)[i]->generateCode();
+		buildinstr("STI",reg,"R999");
+		buildinstr("ADD","R999","1","R999");
+	}
+	string reglabel=Table.getFreeIntReg();
+	buildinstr("MOVL",rlabel,reglabel);
+	buildinstr("STI",reglabel,"R999");
+	buildinstr("ADD","R999","1","R999");
+	buildinstr("JMP",label);
+	buildinstrlabel(rlabel);
+	return "";
+}
+#endif
+
+string PrimitivePatNode::generateCode()
+{
+    //global_pat->insertPat("\"" + ee_->name() + "\"");
+    if(string("any") != ee_->name())
+        global_pat->insertPat(ee_->name());
+    else
+        global_pat->insertPat("@");
+
+    return "";
+}
+
+string RuleNode::generateCode()
+{
+	string ruleLabel=misc.getLabel();
+	string jmplabel=misc.getLabel();
+	string reg =Table.getFreeIntReg();
+        int mem = ruleMMU.getAddress();
+        int len = 0;
+	//cout<<"FLAG2"<<endl;
+	//buildinstr("MOVI",toString(mem),reg);
+        global_pat = new RulePattern;
+
+        pat_->generateCode();
+
+        ruleMMU.incrementAddress();
+        len = ruleMMU.getAddress() - mem;
+	//buildinstr("STI","0",reg);
+        //allocate DS to be used by GEntry
+        global_pat->setRegister(reg);
+        global_pat->setRuleLabel(ruleLabel);
+        global_pat->setOutLabel(jmplabel);
+        global_pat->setPatLength(len);
+        global_pat->setBaseAddress(mem);
+
+        pattern.push_back(global_pat);
+        
+	string tempReg =Table.getFreeIntReg();
+	buildinstrlabel(ruleLabel);
+	buildinstr("ADD",reg, "1", reg);
+	buildinstr("LDI",reg, tempReg);
+	buildinstr("JMPC","NE", "0", tempReg, jmplabel);
+	buildinstr("MOVI",toString(mem), reg);
+        Table.del(tempReg);
+	if(reaction_)
+	    reaction_->generateCode();
+        buildinstr("JMP",jmplabel);
+
+	return "";
+}
+
+void GlobalEntry::generateCode()
+{
+	inFunction=0;
+	vector<RuleNode*> rls;
+	rls = rules();
+
+	functionCode.buildinstr("JMP","main");
+	//buildinstr("JMP","main");
+	buildinstrlabel("main");
+        ruleMMU.setAddress(11000);
+	if(symTab()!=NULL)symTab()->generateCode(0,symTab()->size());
+
+	buildinstr("MOVI",toString(MMU.getAddress()),"R999");
+        if(rls.size())
+        {
+	    string endlabel=misc.getLabel();
+	    string dataInitLabel=misc.getLabel();
+	    string inputlabel=misc.getLabel();
+	    string reg=Table.getFreeIntReg();
+	    
+            buildinstr("JMP",dataInitLabel);
+
+	    for (unsigned int i=0; i< rls.size(); i++)
+	    {
+	        	if ((rls)[i] != NULL)
+	        	{
+		        	//cout<<"FLAG1"<<endl;
+	        		(rls)[i]->generateCode();
+	        	}
+	    }
+            buildinstrlabel(dataInitLabel);
+            list<RulePattern *>::iterator i;
+            for(i = pattern.begin(); i!=pattern.end(); i++)
+            {
+                RulePattern *rule_pat = *i;
+                list<string> pat = rule_pat->getPattern();
+	        buildinstr("MOVI",toString(rule_pat->getBaseAddress()),rule_pat->getRegister());
+                list<string>::iterator j;
+                //string tempReg = Table.getFreeIntReg();
+
+                for(j = pat.begin(); j!=pat.end(); j++)
+                {
+	            //buildinstr("MOVI",toString(toAscii(*j)),tempReg);
+	            buildinstr("STI",toString(toAscii(*j)),rule_pat->getRegister());
+	            buildinstr("ADD",rule_pat->getRegister(),"1",rule_pat->getRegister());
+                }
+                    //Table.del(tempReg);
+	            buildinstr("STI","0",rule_pat->getRegister());
+	            buildinstr("MOVI",toString(rule_pat->getBaseAddress()),rule_pat->getRegister());
+	    }
+            buildinstrlabel(inputlabel);
+	    buildinstr("IN",reg);
+	    buildinstr("JMPC","GT", "0", reg, endlabel);
+            string tempReg = Table.getFreeIntReg();
+            for(i = pattern.begin(); i!=pattern.end(); i++)
+            {
+                RulePattern *rule_pat = *i;
+	        buildinstr("LDI", rule_pat->getRegister(), tempReg);
+	        buildinstr("JMPC","EQ", toString(toAscii("@")), tempReg, rule_pat->getRuleLabel());
+	        buildinstr("JMPC","EQ", tempReg, reg, rule_pat->getRuleLabel());
+                buildinstrlabel(rule_pat->getOutLabel());
+
+                free(rule_pat);
+	    }
+                    Table.del(tempReg);
+	    buildinstr("JMP", inputlabel);
+	    buildinstrlabel(endlabel);
+	    buildinstr("MOVI","0",reg);
+	 }
+	finalCode=functionCode+Code;
+	finalCode.printCode();
+}
+
+void SymTab::generateCode(int first, int last)
+{
+	int i=0;
+	for (SymTab::iterator it = begin(); (it != end()) && i<last; ++it,i++) 
+	{
+		if(i>=first)
+		{
+			SymTabEntry *ste = (SymTabEntry *)(*it);
+			ste->generateCode();
+		}
+	}
+}
+
+string WhileNode::generateCode()
+{
+ 	
+	string startlabel=misc.getLabel();
+	
+        buildinstrlabel(startlabel);
+	string endlabel=misc.getLabel();
+	whileLabels.push_front(endlabel);
+	ExprNode *node = cond();	
+	if(node !=NULL)
+	{
+	        string val = node->generateCode();	
+		buildinstr("JMP",endlabel);
+		buildinstrlabel(val);
+		thenStmt()->generateCode();
+		buildinstr("JMP",startlabel);
+		buildinstrlabel(endlabel);
+	}	
+	whileLabels.remove(endlabel);
+
+// TO BE CHANGED 
+	return "a"; 
+}
+
+string BreakNode::generateCode()
+{
+	
+	list<string>::iterator current = whileLabels.begin();
+	if(whileLabels.size()>0)
+	{
+		for(int i=1;i<getN();i++)
+		{
+			current++;
+		}
+		buildinstr("JMP",(*current));
+	}
+
+// TO BE CHANGED
+	return "a";
+}

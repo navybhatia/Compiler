@@ -1,0 +1,24 @@
+/* 
+ * Tests: operators
+ */
+
+    event open (string a1 , int a2 , unsigned int a3);
+
+    int i = 2 ;
+    int j = 3 ;
+    int k=4;
+    double f = 3.3;
+
+    byte b ;
+    string s ;
+
+    open(file, flags, mode) -> {
+                    f = j * f | i;
+                    j = (j | k) ^ i |(~j);
+                    k = k << (j >> i) ;
+                    f = f << i >>f;
+   		    f=~f;
+		    f=j^f;	
+		    f=i&j;	
+		    f=f&j;	
+   } ;

@@ -1,0 +1,23 @@
+/* 
+ * Tests: operators
+ */
+
+    event o (int a);
+    bool b = false;
+    bool d=true;
+    int i=0;
+    int j=9 + 1;
+    int a = 66;
+    any -> {
+		j=a;
+	
+		a = 666;
+		j = j+a;
+		while(i< 40){
+			i = i+1;
+			//print(j);
+			//print("Bekaar");
+			break 1;	
+		}
+	
+        } ;

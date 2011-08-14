@@ -1,0 +1,28 @@
+test/in01:12: Error:Assignment between incompatible types
+test/in01:15: Error:Assignment between incompatible types
+test/in01:17: Error:Assignment between incompatible types
+test/in01:24: Error:Assignment between incompatible types
+test/in01:28: Error:Assignment between incompatible types
+
+  event open(string a1, int a2, unsigned int a3);
+  int i = unsigned int
+  int j = unsigned int
+  int k = double
+  unsigned int ui = unsigned int
+  unsigned int uj = int
+  unsigned int uk = -(int)unsigned int
+  bool b1 = bool
+  bool b2 = bool
+  double c = double
+  double d = int
+  double e = bool
+  byte b
+  string s = string
+  string ss = int
+  string file
+  int flags
+  unsigned int mode
+
+  (open(string file, int flags, unsigned int mode))-->  {};
+  ;;
+  

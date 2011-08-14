@@ -1,0 +1,20 @@
+test/in05:10: Error:Assigned expression must be a subtype of target
+
+  event a(int x);
+  event b(double y, double z);
+  int z
+  int f
+  int g
+  int w
+  int j
+  int y
+
+  (a(int e))-->  int=(int+(int)unsigned int);;
+  ((a(int f)):(b(double y, double w)|double==int))-->  int=double;;
+  ((a(int f)):(b(double y, double w)|double==int))-->  int=int;;
+  ((a(int f)):(b(double y, double w)|int=(int+(int)unsigned int)))-->  int=int;;
+  ((a(int g)):(b(double y, double w)|int==double))-->  int=int;;
+  ((a(int h)) \/ (b(double y, double w)|int==double))-->  int=(int)unsigned int;;
+  ((a(int j)) \/ (b(double y, double w)|int==double))-->  int=int;;
+  (a(int k))-->  int=(int+int);;
+  

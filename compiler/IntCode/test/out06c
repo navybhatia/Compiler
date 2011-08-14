@@ -1,0 +1,44 @@
+test/in06c:27: Error:Incompatible type for argument 2 for operator `&&'
+test/in06c:28: Error:Incompatible type for argument 1 for operator `||'
+test/in06c:44: Error:Incompatible type for argument 1 for operator `=='
+test/in06c:44: Error:Incompatible type for argument 2 for operator `=='
+test/in06c:45: Error:Incompatible type for argument 1 for operator `>'
+test/in06c:45: Error:Incompatible type for argument 2 for operator `<'
+
+  event open(string a1, int a2, unsigned int a3);
+  int logMessage(string x);
+  bool condition
+  int i = unsigned int
+  int j = unsigned int
+  int k = unsigned int
+  double f = double
+  string s
+  byte bt
+  bool bo
+  bool bo1
+  bool bo2
+  bool bo3
+  class C1;
+  class C2;
+  class C1 c1
+  class C2 c2
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    if (((!int<unsigned int&&int)||int>=int)) if ((int||bool)) {
+      double=(((double)((int)unsigned int*-int/int)-double)-(double)((int)unsigned int%int));
+    };
+    else {};
+    ;
+    else int=(int<<(int>>int));
+    if (((!bool&&bool<=bool)||bool>=bool)) if ((bool<bool||bool>bool)) {
+      double=(((double)((int)unsigned int*-int/int)-double)-(double)((int)unsigned int%int));
+      bool=(bool<bool||bool>bool);
+    };
+    ;
+    if (int!=double) {};
+    if (int==double) {};
+    if (class C1==class C2) {};
+    if ((class C1>int&&int<class C2)) {};
+    };
+  ;;
+  

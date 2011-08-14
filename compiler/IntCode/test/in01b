@@ -1,0 +1,37 @@
+/*
+ *   variable initialization 
+ *   
+ *
+ */
+
+
+    event open (string a1 , int a2 , unsigned int a3);
+
+    int i = 2+3;
+    
+    int j= 2*i;
+	
+    bool a,c=false;
+   
+    byte b ;
+  
+    double x=2.4-i;
+ 
+    double k=b/3;
+	
+    unsigned int ui=1;
+
+    int d=ui+0.9;      
+
+    string s ;
+	 
+    string file;
+    int flags;     
+    
+    unsigned int mode;	
+
+    open(file, flags, mode) -> {
+                     
+		;
+    };
+   

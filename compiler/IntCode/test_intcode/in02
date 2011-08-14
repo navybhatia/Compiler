@@ -1,0 +1,15 @@
+
+int n=11;
+int f(int m)
+{
+	/*if(n==0)
+		return 1;
+	return n*f(n-1);*/
+	print("\\n",m,"\\n");
+	return n+m;
+}
+
+event a();
+
+//int n=10;
+a()->{print(f(10));};

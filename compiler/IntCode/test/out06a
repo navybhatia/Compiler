@@ -1,0 +1,38 @@
+test/in06a:42: Error:Incompatible type for argument 1 for operator `%'
+test/in06a:43: Error:Incompatible type for argument 2 for operator `+'
+test/in06a:45: Error:Incompatible type for argument 2 for operator `-'
+test/in06a:49: Error:Incompatible type for argument 2 for operator `/'
+test/in06a:49: Error:Incompatible type for argument 2 for operator `*'
+
+  event open(string a1, int a2, unsigned int a3);
+  byte b3
+  int l
+  int i = unsigned int
+  int j = -(int)unsigned int
+  unsigned int us1 = unsigned int
+  unsigned int ul = unsigned int
+  int ci = unsigned int
+  double d = double
+  void logMessage();
+  bool b5 = bool
+  string str = string
+  string str1
+  int k = unsigned int
+  double f = double
+  byte b
+  string s
+  int get(int a) {
+      return int;
+  }
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    int=(double%int);
+    double=((double)(byte+(byte)string)-double);
+    int=(int-(int)bool);
+    int=int;
+    int=(int)unsigned int;
+    double=((double)(int+int)+double);
+    double=(double)(int/(int)string)*(int)string;
+  };
+  ;;
+  

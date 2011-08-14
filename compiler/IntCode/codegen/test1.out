@@ -1,0 +1,24 @@
+gcc -Wall -g  -o test1 test1.c
+Setting memory size to 10000384 words
+de.tab.h
+g++ -c -c -g -Wno-deprecated driver.C
+flex -p -8 -Ce -oICode_lexer.C ICode.l
+g++ -c -c -g -Wno-deprecated ICode_lexer.C
+g++ -c -g -Wno-deprecated ICode_parser.C
+g++ -o demo ICode_lexer.o ICode_parser.o driver.o -lfl
+2474.99
+Computed using loop that 50.51*49=2474.99
+10000
+***DONE***
+
+Dump of Registers R000 to R009:
+R000=1036	R001=1048	R002=1052	R003=1052	R004=4
+R005=139	R006=408	R007=136	R008=-136	R009=0
+
+Dump of Registers F000 to F009:
+F000=1.036000	F001=1.172000	F002=1.169000	F003=0.136000	F004=0.003000
+F005=0.139000	F006=0.000408	F007=-0.136000	F008=0.000000	F009=0.000000
+
+Dump of Memory locations 9990 to 10000:
+00002706:          0          0          0          0          0          0  134517201 1159376856
+0000270e:         49 1112148541  134518242

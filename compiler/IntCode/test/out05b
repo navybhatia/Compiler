@@ -1,0 +1,22 @@
+test/in05b:12: Error:Invalid use of pattern negation
+test/in05b:13: Error:Invalid use of pattern negation
+
+  event a(int x);
+  event b(int y, int z);
+  event c(int a, int b, int c);
+  int z
+  int f
+  int g
+  int w
+  int j
+  int y
+
+  (a(int e))-->  int=(int+(int)unsigned int);;
+  ((!((a(int h)) \/ (b(int y, int w)))):((!(c(int f, int g, int w1)))**))-->  int=(int)unsigned int;;
+  ((a(int h)) \/ ((b(int y, int w)):(!((c(int f, int g, int w1))**))))-->  int=(int)unsigned int;;
+  ((a(int i)) \/ (!((b(int y, int w)):(c(int f, int g, int w1)))))-->  int=int;;
+  (((a(int i)) \/ (b(int y, int w))):(!(c(int f, int g, int w1))))-->  int=int;;
+  ((!(a(int j))) \/ (b(int y, int w)|int==int))-->  int=int;;
+  (!(a(int k)))-->  int=(int+int);;
+  ((a(int i)):(!(b(int y, int w)|int=int)))-->  int=int;;
+  

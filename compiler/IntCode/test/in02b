@@ -1,0 +1,46 @@
+/* 
+ * Tests: function invocation
+ */
+
+    int isInFile(string x, string y);
+
+    int isInt(int i) ;
+    unsigned int isUInt(unsigned int i) ;
+    int y(string s, string t);
+    
+    event open (string a1 , int a2 , unsigned int a3);
+    
+    int i;
+
+    int ci;
+ 
+    string us, cs, s;
+
+    unsigned int ui ;
+
+    int ul, cl, l;
+    
+    double f ;
+    byte b ;
+    
+    string file;
+    int flags;
+    unsigned int mode;
+
+    open(file, flags, mode) -> {
+    
+    y("checking function invocation", "for open event");
+    isInFile(file, "abc") ;
+    isInFile(flags, "1") ;
+
+    isInt(i) ;
+    isInt(s) ;
+    
+    isInt(ui) ;
+    isInt(f) ;
+
+    isUInt(4) ;
+    isUInt(ul) ;
+
+    isInt(ul, cl) ;
+};

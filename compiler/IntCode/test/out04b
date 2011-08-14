@@ -1,0 +1,41 @@
+test/in04b:50: Error:Boolean argument expected
+test/in04b:58: Error:Boolean argument expected
+
+  event open(string a1, int a2, unsigned int a3);
+  string file
+  int flags
+  unsigned int mode
+  int logMessage(string x);
+  int i = unsigned int
+  int j = unsigned int
+  int k = unsigned int
+  double f = double
+  string s
+  byte bt
+  bool bo
+  bool bo1
+  bool bo2
+  bool bo3
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    if ((int<=int||int>=double)) {
+      if ((int<int||int>int)) {};
+      else {};
+      };
+    else {};
+    if ((!bool&&bool)) {};
+    if (double=(double)int) {
+      logMessage(string);
+    };
+    if (int) {
+      logMessage(string);
+    };
+    if (((double)int+double)==unsigned int) {
+      logMessage(string);
+    };
+    if (((double)int/double)) {
+      logMessage(string);
+    };
+    };
+  ;;
+  

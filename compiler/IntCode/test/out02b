@@ -1,0 +1,40 @@
+test/in02b:35: Error:Type mismatch for argument 1 to isInFile
+test/in02b:38: Error:Type mismatch for argument 1 to isInt
+test/in02b:41: Error:Type mismatch for argument 1 to isInt
+test/in02b:44: Error:Type mismatch for argument 1 to isUInt
+test/in02b:46: Error:1 arguments expected for isInt
+
+  int isInFile(string x, string y);
+  int isInt(int i);
+  unsigned int isUInt(unsigned int i);
+  int y(string s, string t);
+  event open(string a1, int a2, unsigned int a3);
+  int i
+  int ci
+  string us
+  string cs
+  string s
+  unsigned int ui
+  int ul
+  int cl
+  int l
+  double f
+  byte b
+  string file
+  int flags
+  unsigned int mode
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    y(string, string);
+    isInFile(string, string);
+    isInFile(int, string);
+    isInt(int);
+    isInt(string);
+    isInt((int)unsigned int);
+    isInt(double);
+    isUInt(unsigned int);
+    isUInt(int);
+    isInt(int, int);
+  };
+  ;;
+  

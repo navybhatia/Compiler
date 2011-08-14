@@ -1,0 +1,29 @@
+test/in01a:18: Error:Assignment between incompatible types
+test/in01a:22: Error:Assignment between incompatible types
+test/in01a:24: Error:Assignment between incompatible types
+
+  event open(string a1, int a2, unsigned int a3);
+  int i = unsigned int
+  int j = unsigned int
+  class CString;
+  class CStr;
+  class CString cs1
+  class CString cs2 = class CString
+  class CStr cs3 = class CString
+  bool a
+  bool c = bool
+  double x = int
+  double d = bool
+  byte b = int
+  string s
+  int f = ((int)unsigned int+int)
+  int flags
+  unsigned int mode
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    if (int<int) {
+      int=((int)unsigned int*-int/int);
+    };
+    };
+  ;;
+  

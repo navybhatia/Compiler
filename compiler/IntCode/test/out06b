@@ -1,0 +1,27 @@
+test/in06b:17: Error:Incompatible type for argument 1 for operator `|'
+test/in06b:20: Error:Incompatible type for argument 1 for operator `<<'
+test/in06b:20: Error:Incompatible type for argument 2 for operator `>>'
+test/in06b:21: Error:Incompatible type for argument 1 for operator `~'
+test/in06b:22: Error:Incompatible type for argument 2 for operator `^'
+test/in06b:24: Error:Incompatible type for argument 1 for operator `&'
+
+  event open(string a1, int a2, unsigned int a3);
+  int i = unsigned int
+  int j = unsigned int
+  int k = unsigned int
+  double f = double
+  byte b
+  string s
+
+  (open(string file, int flags, unsigned int mode))-->  {
+    double=(double)((double)int*double|int);
+    int=((int|int)^int|(int)~(unsigned int)int);
+    int=(int<<(int>>int));
+    double=(double)((double<<int)>>double);
+    double=(double)~(unsigned int)double;
+    double=(double)int^double;
+    double=(double)(int&int);
+    double=(double)(double&int);
+  };
+  ;;
+  

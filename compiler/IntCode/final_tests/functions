@@ -1,0 +1,40 @@
+int f(int n)
+{
+	if(n==0)
+		return 0;
+if(n==1)
+return 1;
+return f(n-1)+f(n-2);
+}
+
+int fiter(int n)
+{
+	int i=1;
+	int ret=1;
+	while(i<=n)
+	{
+	ret=ret*i;
+	i=i+1;
+	}
+return ret;
+}
+int fact(int n)
+{
+if(n==0)
+return 1;
+return n*fact(n-1);
+}
+
+event a();
+
+int n=37;
+int m=1000000000;
+int k=100000;
+a()->
+{
+int l=10;
+print("\\n",f(n),"\\n");
+print(fiter(m),"\\n");
+print(fact(k),"\\n");
+print(fact(l));
+}
